@@ -1,0 +1,41 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-statsd-exporter
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: statsd-exporter
+  template:
+    metadata:
+      labels:
+        app: statsd-exporter
+    spec:
+      containers:
+      - name: statsd-exporter
+        image: prom/statsd-exporter:v0.26.0
+        args:
+          - '--statsd.mapping-config=/etc/statsd/statsd-mapping.yml'
+        ports:
+        - containerPort: 9102
+          name: metrics
+        - containerPort: 9125
+          name: statsd
+          protocol: UDP
+        volumeMounts:
+        - name: statsd-config
+          mountPath: /etc/statsd
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      volumes:
+      - name: statsd-config
+        configMap:
+          name: statsd-mapping-config
