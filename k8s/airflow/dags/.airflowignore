@@ -1,6 +1,0 @@
-# Ignore these files/folders in DAG directory
-__pycache__
-*.pyc
-.git
-.gitignore
-README.md
