@@ -14,3 +14,15 @@ data:
         url: http://prometheus.monitoring.svc.cluster.local:9090
         isDefault: true
         editable: true
+      - name: Airflow PostgreSQL
+        type: postgres
+        access: proxy
+        url: postgresql.database.svc.cluster.local:5432
+        database: airflow
+        user: airflow
+        secureJsonData:
+          password: airflow123
+        jsonData:
+          sslmode: disable
+          postgresVersion: 1400
+        editable: true

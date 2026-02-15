@@ -44,6 +44,7 @@ kubectl apply -f k8s/monitoring/grafana-pvc.yaml
 kubectl apply -f k8s/monitoring/grafana-datasources.yaml
 kubectl apply -f k8s/monitoring/grafana-dashboards-config.yaml
 kubectl apply -f k8s/monitoring/grafana-airflow-dashboard.yaml
+kubectl apply -f k8s/monitoring/grafana-airflow-db-dashboard.yaml
 kubectl apply -f k8s/monitoring/grafana-deployment.yaml
 kubectl apply -f k8s/monitoring/grafana-service.yaml
 
