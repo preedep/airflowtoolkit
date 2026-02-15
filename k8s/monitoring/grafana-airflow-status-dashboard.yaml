@@ -76,8 +76,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 0.0,
+            "w": 2,
+            "x": 0,
             "y": 0
           },
           "id": 1,
@@ -93,7 +93,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -104,7 +104,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset1_pro",
           "type": "stat"
         },
         {
@@ -166,8 +166,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 1.2,
+            "w": 2,
+            "x": 2,
             "y": 0
           },
           "id": 2,
@@ -183,7 +183,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -194,7 +194,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset2_pro",
           "type": "stat"
         },
         {
@@ -256,8 +256,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 2.4,
+            "w": 2,
+            "x": 4,
             "y": 0
           },
           "id": 3,
@@ -273,7 +273,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -284,7 +284,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_alia",
           "type": "stat"
         },
         {
@@ -346,8 +346,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 3.5999999999999996,
+            "w": 2,
+            "x": 6,
             "y": 0
           },
           "id": 4,
@@ -363,7 +363,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -374,7 +374,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_alia",
           "type": "stat"
         },
         {
@@ -436,8 +436,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 4.8,
+            "w": 2,
+            "x": 8,
             "y": 0
           },
           "id": 5,
@@ -453,7 +453,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -464,7 +464,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_alia",
           "type": "stat"
         },
         {
@@ -526,8 +526,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 6.0,
+            "w": 2,
+            "x": 10,
             "y": 0
           },
           "id": 6,
@@ -543,7 +543,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -554,7 +554,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_alia",
           "type": "stat"
         },
         {
@@ -616,8 +616,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 7.199999999999999,
+            "w": 2,
+            "x": 12,
             "y": 0
           },
           "id": 7,
@@ -633,7 +633,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -644,7 +644,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_cons",
           "type": "stat"
         },
         {
@@ -706,8 +706,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 8.4,
+            "w": 2,
+            "x": 14,
             "y": 0
           },
           "id": 8,
@@ -723,7 +723,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -734,7 +734,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_cons",
           "type": "stat"
         },
         {
@@ -796,8 +796,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 9.6,
+            "w": 2,
+            "x": 16,
             "y": 0
           },
           "id": 9,
@@ -813,7 +813,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -824,7 +824,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_cons",
           "type": "stat"
         },
         {
@@ -886,8 +886,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 10.799999999999999,
+            "w": 2,
+            "x": 18,
             "y": 0
           },
           "id": 10,
@@ -903,7 +903,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -914,7 +914,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_cons",
           "type": "stat"
         },
         {
@@ -976,8 +976,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 12.0,
+            "w": 2,
+            "x": 20,
             "y": 0
           },
           "id": 11,
@@ -993,7 +993,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -1004,7 +1004,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_prod",
           "type": "stat"
         },
         {
@@ -1066,8 +1066,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 13.2,
+            "w": 2,
+            "x": 22,
             "y": 0
           },
           "id": 12,
@@ -1083,7 +1083,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -1094,7 +1094,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_prod",
           "type": "stat"
         },
         {
@@ -1156,9 +1156,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 14.399999999999999,
-            "y": 0
+            "w": 2,
+            "x": 0,
+            "y": 2
           },
           "id": 13,
           "options": {
@@ -1173,7 +1173,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -1184,7 +1184,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_s3_b",
           "type": "stat"
         },
         {
@@ -1246,9 +1246,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 15.6,
-            "y": 0
+            "w": 2,
+            "x": 2,
+            "y": 2
           },
           "id": 14,
           "options": {
@@ -1263,7 +1263,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -1274,7 +1274,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_s3_b",
           "type": "stat"
         },
         {
@@ -1336,9 +1336,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 16.8,
-            "y": 0
+            "w": 2,
+            "x": 4,
+            "y": 2
           },
           "id": 15,
           "options": {
@@ -1353,7 +1353,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -1364,7 +1364,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_s3_b",
           "type": "stat"
         },
         {
@@ -1426,9 +1426,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 18.0,
-            "y": 0
+            "w": 2,
+            "x": 6,
+            "y": 2
           },
           "id": 16,
           "options": {
@@ -1443,7 +1443,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -1454,7 +1454,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_s3_b",
           "type": "stat"
         },
         {
@@ -1516,9 +1516,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 19.2,
-            "y": 0
+            "w": 2,
+            "x": 8,
+            "y": 2
           },
           "id": 17,
           "options": {
@@ -1533,7 +1533,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -1544,7 +1544,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_with",
           "type": "stat"
         },
         {
@@ -1606,9 +1606,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 20.4,
-            "y": 0
+            "w": 2,
+            "x": 10,
+            "y": 2
           },
           "id": 18,
           "options": {
@@ -1623,7 +1623,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -1634,7 +1634,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_with",
           "type": "stat"
         },
         {
@@ -1696,9 +1696,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 21.599999999999998,
-            "y": 0
+            "w": 2,
+            "x": 12,
+            "y": 2
           },
           "id": 19,
           "options": {
@@ -1713,7 +1713,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -1724,7 +1724,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "asset_with",
           "type": "stat"
         },
         {
@@ -1786,9 +1786,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 22.8,
-            "y": 0
+            "w": 2,
+            "x": 14,
+            "y": 2
           },
           "id": 20,
           "options": {
@@ -1803,7 +1803,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -1814,7 +1814,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "child_dag",
           "type": "stat"
         },
         {
@@ -1876,8 +1876,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 0.0,
+            "w": 2,
+            "x": 16,
             "y": 2
           },
           "id": 21,
@@ -1893,7 +1893,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -1904,7 +1904,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "conditiona",
           "type": "stat"
         },
         {
@@ -1966,8 +1966,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 1.2,
+            "w": 2,
+            "x": 18,
             "y": 2
           },
           "id": 22,
@@ -1983,7 +1983,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -1994,7 +1994,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "consume_1_",
           "type": "stat"
         },
         {
@@ -2056,8 +2056,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 2.4,
+            "w": 2,
+            "x": 20,
             "y": 2
           },
           "id": 23,
@@ -2073,7 +2073,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -2084,7 +2084,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "consume_1_",
           "type": "stat"
         },
         {
@@ -2146,8 +2146,8 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 3.5999999999999996,
+            "w": 2,
+            "x": 22,
             "y": 2
           },
           "id": 24,
@@ -2163,7 +2163,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -2174,7 +2174,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "consume_1_",
           "type": "stat"
         },
         {
@@ -2236,9 +2236,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 4.8,
-            "y": 2
+            "w": 2,
+            "x": 0,
+            "y": 4
           },
           "id": 25,
           "options": {
@@ -2253,7 +2253,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -2264,7 +2264,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "consumes_a",
           "type": "stat"
         },
         {
@@ -2326,9 +2326,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 6.0,
-            "y": 2
+            "w": 2,
+            "x": 2,
+            "y": 4
           },
           "id": 26,
           "options": {
@@ -2343,7 +2343,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -2354,7 +2354,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_as",
           "type": "stat"
         },
         {
@@ -2416,9 +2416,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 7.199999999999999,
-            "y": 2
+            "w": 2,
+            "x": 4,
+            "y": 4
           },
           "id": 27,
           "options": {
@@ -2433,7 +2433,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -2444,7 +2444,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_ba",
           "type": "stat"
         },
         {
@@ -2506,9 +2506,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 8.4,
-            "y": 2
+            "w": 2,
+            "x": 6,
+            "y": 4
           },
           "id": 28,
           "options": {
@@ -2523,7 +2523,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -2534,7 +2534,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_ba",
           "type": "stat"
         },
         {
@@ -2596,9 +2596,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 9.6,
-            "y": 2
+            "w": 2,
+            "x": 8,
+            "y": 4
           },
           "id": 29,
           "options": {
@@ -2613,7 +2613,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -2624,7 +2624,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_br",
           "type": "stat"
         },
         {
@@ -2686,9 +2686,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 10.799999999999999,
-            "y": 2
+            "w": 2,
+            "x": 10,
+            "y": 4
           },
           "id": 30,
           "options": {
@@ -2703,7 +2703,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -2714,7 +2714,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_br",
           "type": "stat"
         },
         {
@@ -2776,9 +2776,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 12.0,
-            "y": 2
+            "w": 2,
+            "x": 12,
+            "y": 4
           },
           "id": 31,
           "options": {
@@ -2793,7 +2793,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -2804,7 +2804,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_br",
           "type": "stat"
         },
         {
@@ -2866,9 +2866,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 13.2,
-            "y": 2
+            "w": 2,
+            "x": 14,
+            "y": 4
           },
           "id": 32,
           "options": {
@@ -2883,7 +2883,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -2894,7 +2894,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_br",
           "type": "stat"
         },
         {
@@ -2956,9 +2956,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 14.399999999999999,
-            "y": 2
+            "w": 2,
+            "x": 16,
+            "y": 4
           },
           "id": 33,
           "options": {
@@ -2973,7 +2973,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -2984,7 +2984,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_br",
           "type": "stat"
         },
         {
@@ -3046,9 +3046,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 15.6,
-            "y": 2
+            "w": 2,
+            "x": 18,
+            "y": 4
           },
           "id": 34,
           "options": {
@@ -3063,7 +3063,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -3074,7 +3074,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_br",
           "type": "stat"
         },
         {
@@ -3136,9 +3136,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 16.8,
-            "y": 2
+            "w": 2,
+            "x": 20,
+            "y": 4
           },
           "id": 35,
           "options": {
@@ -3153,7 +3153,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -3164,7 +3164,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_br",
           "type": "stat"
         },
         {
@@ -3226,9 +3226,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 18.0,
-            "y": 2
+            "w": 2,
+            "x": 22,
+            "y": 4
           },
           "id": 36,
           "options": {
@@ -3243,7 +3243,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -3254,7 +3254,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_co",
           "type": "stat"
         },
         {
@@ -3316,9 +3316,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 19.2,
-            "y": 2
+            "w": 2,
+            "x": 0,
+            "y": 6
           },
           "id": 37,
           "options": {
@@ -3333,7 +3333,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -3344,7 +3344,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_cu",
           "type": "stat"
         },
         {
@@ -3406,9 +3406,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 20.4,
-            "y": 2
+            "w": 2,
+            "x": 2,
+            "y": 6
           },
           "id": 38,
           "options": {
@@ -3423,7 +3423,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -3434,7 +3434,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_da",
           "type": "stat"
         },
         {
@@ -3496,9 +3496,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 21.599999999999998,
-            "y": 2
+            "w": 2,
+            "x": 4,
+            "y": 6
           },
           "id": 39,
           "options": {
@@ -3513,7 +3513,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -3524,7 +3524,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_di",
           "type": "stat"
         },
         {
@@ -3586,9 +3586,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 22.8,
-            "y": 2
+            "w": 2,
+            "x": 6,
+            "y": 6
           },
           "id": 40,
           "options": {
@@ -3603,7 +3603,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -3614,7 +3614,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_dy",
           "type": "stat"
         },
         {
@@ -3676,9 +3676,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 0.0,
-            "y": 4
+            "w": 2,
+            "x": 8,
+            "y": 6
           },
           "id": 41,
           "options": {
@@ -3693,7 +3693,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -3704,7 +3704,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_dy",
           "type": "stat"
         },
         {
@@ -3766,9 +3766,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 1.2,
-            "y": 4
+            "w": 2,
+            "x": 10,
+            "y": 6
           },
           "id": 42,
           "options": {
@@ -3783,7 +3783,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -3794,7 +3794,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_ex",
           "type": "stat"
         },
         {
@@ -3856,9 +3856,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 2.4,
-            "y": 4
+            "w": 2,
+            "x": 12,
+            "y": 6
           },
           "id": 43,
           "options": {
@@ -3873,7 +3873,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -3884,7 +3884,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_ex",
           "type": "stat"
         },
         {
@@ -3946,9 +3946,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 3.5999999999999996,
-            "y": 4
+            "w": 2,
+            "x": 14,
+            "y": 6
           },
           "id": 44,
           "options": {
@@ -3963,7 +3963,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -3974,7 +3974,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_ku",
           "type": "stat"
         },
         {
@@ -4036,9 +4036,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 4.8,
-            "y": 4
+            "w": 2,
+            "x": 16,
+            "y": 6
           },
           "id": 45,
           "options": {
@@ -4053,7 +4053,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -4064,7 +4064,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_lo",
           "type": "stat"
         },
         {
@@ -4126,9 +4126,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 6.0,
-            "y": 4
+            "w": 2,
+            "x": 18,
+            "y": 6
           },
           "id": 46,
           "options": {
@@ -4143,7 +4143,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -4154,7 +4154,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_ne",
           "type": "stat"
         },
         {
@@ -4216,9 +4216,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 7.199999999999999,
-            "y": 4
+            "w": 2,
+            "x": 20,
+            "y": 6
           },
           "id": 47,
           "options": {
@@ -4233,7 +4233,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -4244,7 +4244,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_pa",
           "type": "stat"
         },
         {
@@ -4306,9 +4306,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 8.4,
-            "y": 4
+            "w": 2,
+            "x": 22,
+            "y": 6
           },
           "id": 48,
           "options": {
@@ -4323,7 +4323,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -4334,7 +4334,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_pa",
           "type": "stat"
         },
         {
@@ -4396,9 +4396,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 9.6,
-            "y": 4
+            "w": 2,
+            "x": 0,
+            "y": 8
           },
           "id": 49,
           "options": {
@@ -4413,7 +4413,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -4424,7 +4424,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_pa",
           "type": "stat"
         },
         {
@@ -4486,9 +4486,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 10.799999999999999,
-            "y": 4
+            "w": 2,
+            "x": 2,
+            "y": 8
           },
           "id": 50,
           "options": {
@@ -4503,7 +4503,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -4514,7 +4514,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_py",
           "type": "stat"
         },
         {
@@ -4576,9 +4576,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 12.0,
-            "y": 4
+            "w": 2,
+            "x": 4,
+            "y": 8
           },
           "id": 51,
           "options": {
@@ -4593,7 +4593,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -4604,7 +4604,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_py",
           "type": "stat"
         },
         {
@@ -4666,9 +4666,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 13.2,
-            "y": 4
+            "w": 2,
+            "x": 6,
+            "y": 8
           },
           "id": 52,
           "options": {
@@ -4683,7 +4683,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -4694,7 +4694,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_se",
           "type": "stat"
         },
         {
@@ -4756,9 +4756,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 14.399999999999999,
-            "y": 4
+            "w": 2,
+            "x": 8,
+            "y": 8
           },
           "id": 53,
           "options": {
@@ -4773,7 +4773,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -4784,7 +4784,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_se",
           "type": "stat"
         },
         {
@@ -4846,9 +4846,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 15.6,
-            "y": 4
+            "w": 2,
+            "x": 10,
+            "y": 8
           },
           "id": 54,
           "options": {
@@ -4863,7 +4863,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -4874,7 +4874,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_se",
           "type": "stat"
         },
         {
@@ -4936,9 +4936,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 16.8,
-            "y": 4
+            "w": 2,
+            "x": 12,
+            "y": 8
           },
           "id": 55,
           "options": {
@@ -4953,7 +4953,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -4964,7 +4964,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_se",
           "type": "stat"
         },
         {
@@ -5026,9 +5026,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 18.0,
-            "y": 4
+            "w": 2,
+            "x": 14,
+            "y": 8
           },
           "id": 56,
           "options": {
@@ -5043,7 +5043,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -5054,7 +5054,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_sh",
           "type": "stat"
         },
         {
@@ -5116,9 +5116,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 19.2,
-            "y": 4
+            "w": 2,
+            "x": 16,
+            "y": 8
           },
           "id": 57,
           "options": {
@@ -5133,7 +5133,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -5144,7 +5144,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_sh",
           "type": "stat"
         },
         {
@@ -5206,9 +5206,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 20.4,
-            "y": 4
+            "w": 2,
+            "x": 18,
+            "y": 8
           },
           "id": 58,
           "options": {
@@ -5223,7 +5223,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -5234,7 +5234,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_si",
           "type": "stat"
         },
         {
@@ -5296,9 +5296,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 21.599999999999998,
-            "y": 4
+            "w": 2,
+            "x": 20,
+            "y": 8
           },
           "id": 59,
           "options": {
@@ -5313,7 +5313,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -5324,7 +5324,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_sk",
           "type": "stat"
         },
         {
@@ -5386,9 +5386,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 22.8,
-            "y": 4
+            "w": 2,
+            "x": 22,
+            "y": 8
           },
           "id": 60,
           "options": {
@@ -5403,7 +5403,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -5414,7 +5414,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_ta",
           "type": "stat"
         },
         {
@@ -5476,9 +5476,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 0.0,
-            "y": 6
+            "w": 2,
+            "x": 0,
+            "y": 10
           },
           "id": 61,
           "options": {
@@ -5493,7 +5493,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -5504,7 +5504,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_ta",
           "type": "stat"
         },
         {
@@ -5566,9 +5566,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 1.2,
-            "y": 6
+            "w": 2,
+            "x": 2,
+            "y": 10
           },
           "id": 62,
           "options": {
@@ -5583,7 +5583,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -5594,7 +5594,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_ta",
           "type": "stat"
         },
         {
@@ -5656,9 +5656,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 2.4,
-            "y": 6
+            "w": 2,
+            "x": 4,
+            "y": 10
           },
           "id": 63,
           "options": {
@@ -5673,7 +5673,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -5684,7 +5684,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_ti",
           "type": "stat"
         },
         {
@@ -5746,9 +5746,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 3.5999999999999996,
-            "y": 6
+            "w": 2,
+            "x": 6,
+            "y": 10
           },
           "id": 64,
           "options": {
@@ -5763,7 +5763,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -5774,7 +5774,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_tr",
           "type": "stat"
         },
         {
@@ -5836,9 +5836,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 4.8,
-            "y": 6
+            "w": 2,
+            "x": 8,
+            "y": 10
           },
           "id": 65,
           "options": {
@@ -5853,7 +5853,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -5864,7 +5864,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_tr",
           "type": "stat"
         },
         {
@@ -5926,9 +5926,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 6.0,
-            "y": 6
+            "w": 2,
+            "x": 10,
+            "y": 10
           },
           "id": 66,
           "options": {
@@ -5943,7 +5943,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -5954,7 +5954,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_we",
           "type": "stat"
         },
         {
@@ -6016,9 +6016,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 7.199999999999999,
-            "y": 6
+            "w": 2,
+            "x": 12,
+            "y": 10
           },
           "id": 67,
           "options": {
@@ -6033,7 +6033,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -6044,7 +6044,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_wo",
           "type": "stat"
         },
         {
@@ -6106,9 +6106,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 8.4,
-            "y": 6
+            "w": 2,
+            "x": 14,
+            "y": 10
           },
           "id": 68,
           "options": {
@@ -6123,7 +6123,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -6134,7 +6134,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_xc",
           "type": "stat"
         },
         {
@@ -6196,9 +6196,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 9.6,
-            "y": 6
+            "w": 2,
+            "x": 16,
+            "y": 10
           },
           "id": 69,
           "options": {
@@ -6213,7 +6213,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -6224,7 +6224,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_xc",
           "type": "stat"
         },
         {
@@ -6286,9 +6286,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 10.799999999999999,
-            "y": 6
+            "w": 2,
+            "x": 18,
+            "y": 10
           },
           "id": 70,
           "options": {
@@ -6303,7 +6303,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -6314,7 +6314,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "example_xc",
           "type": "stat"
         },
         {
@@ -6376,9 +6376,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 12.0,
-            "y": 6
+            "w": 2,
+            "x": 20,
+            "y": 10
           },
           "id": 71,
           "options": {
@@ -6393,7 +6393,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -6404,7 +6404,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "latest_onl",
           "type": "stat"
         },
         {
@@ -6466,9 +6466,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 13.2,
-            "y": 6
+            "w": 2,
+            "x": 22,
+            "y": 10
           },
           "id": 72,
           "options": {
@@ -6483,7 +6483,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -6494,7 +6494,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "latest_onl",
           "type": "stat"
         },
         {
@@ -6556,9 +6556,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 14.399999999999999,
-            "y": 6
+            "w": 2,
+            "x": 0,
+            "y": 12
           },
           "id": 73,
           "options": {
@@ -6573,7 +6573,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -6584,7 +6584,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "read_asset",
           "type": "stat"
         },
         {
@@ -6646,9 +6646,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 15.6,
-            "y": 6
+            "w": 2,
+            "x": 2,
+            "y": 12
           },
           "id": 74,
           "options": {
@@ -6663,7 +6663,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -6674,7 +6674,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "read_asset",
           "type": "stat"
         },
         {
@@ -6736,9 +6736,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 16.8,
-            "y": 6
+            "w": 2,
+            "x": 4,
+            "y": 12
           },
           "id": 75,
           "options": {
@@ -6753,7 +6753,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -6764,7 +6764,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "tutorial",
           "type": "stat"
         },
         {
@@ -6826,9 +6826,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 18.0,
-            "y": 6
+            "w": 2,
+            "x": 6,
+            "y": 12
           },
           "id": 76,
           "options": {
@@ -6843,7 +6843,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -6854,7 +6854,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "tutorial_d",
           "type": "stat"
         },
         {
@@ -6916,9 +6916,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 19.2,
-            "y": 6
+            "w": 2,
+            "x": 8,
+            "y": 12
           },
           "id": 77,
           "options": {
@@ -6933,7 +6933,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -6944,7 +6944,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "tutorial_o",
           "type": "stat"
         },
         {
@@ -7006,9 +7006,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 20.4,
-            "y": 6
+            "w": 2,
+            "x": 10,
+            "y": 12
           },
           "id": 78,
           "options": {
@@ -7023,7 +7023,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -7034,7 +7034,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "tutorial_t",
           "type": "stat"
         },
         {
@@ -7096,9 +7096,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 21.599999999999998,
-            "y": 6
+            "w": 2,
+            "x": 12,
+            "y": 12
           },
           "id": 79,
           "options": {
@@ -7113,7 +7113,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -7124,7 +7124,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "tutorial_t",
           "type": "stat"
         },
         {
@@ -7186,9 +7186,9 @@ data:
           },
           "gridPos": {
             "h": 2,
-            "w": 1.2,
-            "x": 22.8,
-            "y": 6
+            "w": 2,
+            "x": 14,
+            "y": 12
           },
           "id": 80,
           "options": {
@@ -7203,7 +7203,7 @@ data:
               ],
               "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "9.0.0",
           "targets": [
@@ -7214,7 +7214,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "",
+          "title": "tutorial_t",
           "type": "stat"
         }
       ],

@@ -20,9 +20,9 @@ dag_ids = [line.strip() for line in result.stdout.strip().split('\n') if line.st
 print(f"Found {len(dag_ids)} DAGs")
 
 # Grid configuration
-COLS = 20  # Number of columns in grid (more compact)
-PANEL_WIDTH = 1.2  # Width of each panel (24 / 20 = 1.2)
-PANEL_HEIGHT = 2  # Height of each panel (smaller)
+COLS = 12  # Number of columns in grid
+PANEL_WIDTH = 2  # Width of each panel (24 / 12 = 2) - must be integer
+PANEL_HEIGHT = 2  # Height of each panel
 
 panels = []
 panel_id = 1
@@ -31,8 +31,8 @@ for idx, dag_id in enumerate(dag_ids):
     row = idx // COLS
     col = idx % COLS
     
-    x_pos = col * PANEL_WIDTH
-    y_pos = row * PANEL_HEIGHT
+    x_pos = int(col * PANEL_WIDTH)
+    y_pos = int(row * PANEL_HEIGHT)
     
     # Truncate DAG name for display (shorter for compact view)
     display_name = dag_id[:10] if len(dag_id) > 10 else dag_id
@@ -111,7 +111,7 @@ for idx, dag_id in enumerate(dag_ids):
                 "calcs": ["lastNotNull"],
                 "fields": ""
             },
-            "textMode": "name"
+            "textMode": "value_and_name"
         },
         "pluginVersion": "9.0.0",
         "targets": [
@@ -149,7 +149,7 @@ FROM dag_status;
                 "refId": "A"
             }
         ],
-        "title": "",
+        "title": display_name,
         "type": "stat"
     }
     
