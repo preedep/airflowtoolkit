@@ -1,124 +1,72 @@
 #!/usr/bin/env python3
 """
-Generate Grafana dashboard with DAG status grid layout
+Generate Grafana dashboard with DAG status grid layout (Dynamic)
+This dashboard uses a single SQL query to dynamically show all DAGs without hardcoding.
 """
 import json
-import subprocess
 
-# Get list of DAGs from database
-result = subprocess.run([
-    'kubectl', 'exec', '-n', 'database',
-    subprocess.run(['kubectl', 'get', 'pod', '-n', 'database', '-l', 'app=postgresql', 
-                   '-o', 'jsonpath={.items[0].metadata.name}'], 
-                   capture_output=True, text=True).stdout.strip(),
-    '--', 'psql', '-U', 'airflow', '-d', 'airflow', '-t', '-A', '-c',
-    "SELECT dag_id FROM dag WHERE bundle_name IS NOT NULL ORDER BY dag_id;"
-], capture_output=True, text=True)
+print("Generating dynamic DAG status grid dashboard...")
+print("This dashboard will automatically show all DAGs from the database.")
 
-dag_ids = [line.strip() for line in result.stdout.strip().split('\n') if line.strip()]
-
-print(f"Found {len(dag_ids)} DAGs")
-
-# Grid configuration
-COLS = 12  # Number of columns in grid
-PANEL_WIDTH = 2  # Width of each panel (24 / 12 = 2) - must be integer
-PANEL_HEIGHT = 2  # Height of each panel
-
-panels = []
-panel_id = 1
-
-for idx, dag_id in enumerate(dag_ids):
-    row = idx // COLS
-    col = idx % COLS
-    
-    x_pos = int(col * PANEL_WIDTH)
-    y_pos = int(row * PANEL_HEIGHT)
-    
-    # Truncate DAG name for display (shorter for compact view)
-    display_name = dag_id[:10] if len(dag_id) > 10 else dag_id
-    
-    panel = {
+# Create a single dynamic table panel that shows all DAGs
+# This will automatically update when DAGs are added/removed
+panels = [
+    {
         "datasource": "Airflow PostgreSQL",
         "fieldConfig": {
             "defaults": {
-                "color": {
-                    "mode": "thresholds"
-                },
-                "mappings": [
-                    {
-                        "options": {
-                            "0": {
-                                "color": "light-gray",
-                                "index": 0,
-                                "text": display_name
-                            },
-                            "1": {
-                                "color": "dark-gray",
-                                "index": 1,
-                                "text": display_name
-                            },
-                            "2": {
-                                "color": "green",
-                                "index": 2,
-                                "text": display_name
-                            },
-                            "3": {
-                                "color": "red",
-                                "index": 3,
-                                "text": display_name
-                            },
-                            "4": {
-                                "color": "blue",
-                                "index": 4,
-                                "text": display_name
-                            },
-                            "5": {
-                                "color": "yellow",
-                                "index": 5,
-                                "text": display_name
-                            }
-                        },
-                        "type": "value"
+                "custom": {
+                    "align": "center",
+                    "displayMode": "color-background",
+                    "cellOptions": {
+                        "type": "auto"
                     }
-                ],
+                },
+                "mappings": [],
                 "thresholds": {
                     "mode": "absolute",
                     "steps": [
-                        {
-                            "color": "gray",
-                            "value": None
-                        }
+                        {"color": "light-gray", "value": None},
+                        {"color": "light-gray", "value": 0},
+                        {"color": "dark-gray", "value": 1},
+                        {"color": "green", "value": 2},
+                        {"color": "red", "value": 3},
+                        {"color": "blue", "value": 4},
+                        {"color": "yellow", "value": 5}
+                    ]
+                }
+            },
+            "overrides": [
+                {
+                    "matcher": {"id": "byName", "options": "DAG"},
+                    "properties": [
+                        {"id": "custom.width", "value": 200},
+                        {"id": "custom.displayMode", "value": "color-background"}
                     ]
                 },
-                "unit": "none"
-            },
-            "overrides": []
+                {
+                    "matcher": {"id": "byName", "options": "Status"},
+                    "properties": [
+                        {"id": "custom.width", "value": 100},
+                        {"id": "custom.displayMode", "value": "color-background"}
+                    ]
+                }
+            ]
         },
-        "gridPos": {
-            "h": PANEL_HEIGHT,
-            "w": PANEL_WIDTH,
-            "x": x_pos,
-            "y": y_pos
-        },
-        "id": panel_id,
+        "gridPos": {"h": 30, "w": 24, "x": 0, "y": 0},
+        "id": 1,
         "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "justifyMode": "center",
-            "orientation": "auto",
-            "reduceOptions": {
-                "values": False,
-                "calcs": ["lastNotNull"],
-                "fields": ""
-            },
-            "textMode": "value_and_name"
+            "showHeader": True,
+            "cellHeight": "sm",
+            "footer": {"show": False},
+            "sortBy": [{"desc": False, "displayName": "DAG"}]
         },
         "pluginVersion": "9.0.0",
         "targets": [
             {
                 "datasource": "Airflow PostgreSQL",
                 "format": "table",
-                "rawSql": f"""
+                "rawSql": """
 WITH dag_status AS (
   SELECT 
     d.dag_id,
@@ -133,9 +81,10 @@ WITH dag_status AS (
     ORDER BY start_date DESC
     LIMIT 1
   ) dr ON true
-  WHERE d.dag_id = '{dag_id}'
+  WHERE d.bundle_name IS NOT NULL
 )
 SELECT 
+  SUBSTRING(dag_id, 1, 30) as "DAG",
   CASE 
     WHEN latest_state = 'running' THEN 2
     WHEN latest_state = 'failed' THEN 3
@@ -143,18 +92,25 @@ SELECT
     WHEN is_paused = true THEN 1
     WHEN latest_start IS NOT NULL THEN 5
     ELSE 0
-  END as value
-FROM dag_status;
+  END as "Status",
+  CASE 
+    WHEN latest_state = 'running' THEN 'Running'
+    WHEN latest_state = 'failed' THEN 'Failed'
+    WHEN latest_state = 'success' THEN 'Success'
+    WHEN is_paused = true THEN 'Paused'
+    WHEN latest_start IS NOT NULL THEN 'Idle'
+    ELSE 'Never Run'
+  END as "State"
+FROM dag_status
+ORDER BY dag_id;
                 """,
                 "refId": "A"
             }
         ],
-        "title": display_name,
-        "type": "stat"
+        "title": "All DAGs Status (Dynamic)",
+        "type": "table"
     }
-    
-    panel_id += 1
-    panels.append(panel)
+]
 
 # Create dashboard JSON
 dashboard = {
@@ -221,5 +177,10 @@ data:
 with open('k8s/monitoring/grafana-airflow-status-dashboard.yaml', 'w') as f:
     f.write(yaml_content)
 
-print(f"Generated dashboard with {len(panels)} panels")
-print("File: k8s/monitoring/grafana-airflow-status-dashboard.yaml")
+print(f"✅ Generated dynamic dashboard with {len(panels)} panel(s)")
+print("📊 This dashboard will automatically show all DAGs from the database")
+print("📁 File: k8s/monitoring/grafana-airflow-status-dashboard.yaml")
+print("")
+print("💡 To group by app/naming convention:")
+print("   - Modify the SQL query to extract app name from DAG ID")
+print("   - Example: SPLIT_PART(dag_id, '_', 1) as app_name")
