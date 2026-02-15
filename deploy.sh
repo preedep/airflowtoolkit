@@ -60,12 +60,16 @@ echo "Step 6: Installing Airflow 3.x..."
 helm install airflow apache-airflow/airflow \
   --namespace airflow \
   --values k8s/airflow/values.yaml \
-  --version 1.15.0 \
+  --version 1.18.0 \
   --timeout 10m
 
 echo ""
-echo "Waiting for Airflow webserver to be ready..."
-kubectl wait --for=condition=ready pod -l component=webserver -n airflow --timeout=600s
+echo "Waiting for Airflow API server to be ready..."
+kubectl wait --for=condition=ready pod -l component=api-server -n airflow --timeout=600s
+
+echo ""
+echo "Step 7: Exposing Airflow UI via NodePort..."
+kubectl apply -f k8s/airflow/api-server-nodeport.yaml
 
 echo ""
 echo "=========================================="

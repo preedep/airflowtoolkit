@@ -5,7 +5,7 @@ executor: "KubernetesExecutor"
 images:
   airflow:
     repository: apache/airflow
-    tag: "3.0.0"
+    tag: "3.0.2"
     pullPolicy: IfNotPresent
 
 env:
