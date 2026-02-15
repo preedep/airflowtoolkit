@@ -50,7 +50,7 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 4,
+            "w": 3,
             "x": 0,
             "y": 0
           },
@@ -74,11 +74,11 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Total DAGs\" FROM dag WHERE is_active = true;",
+              "rawSql": "SELECT COUNT(*) as \"Total DAGs\" FROM dag WHERE bundle_name IS NOT NULL;",
               "refId": "A"
             }
           ],
-          "title": "Total DAGs",
+          "title": "Total DAGs (All)",
           "type": "stat"
         },
         {
@@ -104,8 +104,62 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 4,
-            "x": 4,
+            "w": 3,
+            "x": 3,
+            "y": 0
+          },
+          "id": 14,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "9.0.0",
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT COUNT(*) as \"Active DAGs\" FROM dag WHERE is_paused = false AND bundle_name IS NOT NULL;",
+              "refId": "A"
+            }
+          ],
+          "title": "Total DAGs (Active)",
+          "type": "stat"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 3,
+            "x": 6,
             "y": 0
           },
           "id": 2,
@@ -158,8 +212,8 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 4,
-            "x": 8,
+            "w": 3,
+            "x": 9,
             "y": 0
           },
           "id": 3,
@@ -212,7 +266,7 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 4,
+            "w": 3,
             "x": 12,
             "y": 0
           },
@@ -236,7 +290,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Success DAGs\" FROM dag_run WHERE state = 'success' AND execution_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(DISTINCT dag_id) as \"Success DAGs\" FROM dag_run WHERE state = 'success' AND start_date > NOW() - INTERVAL '24 hours';",
               "refId": "A"
             }
           ],
@@ -266,8 +320,8 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 4,
-            "x": 16,
+            "w": 3,
+            "x": 15,
             "y": 0
           },
           "id": 5,
@@ -290,7 +344,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Failed DAGs\" FROM dag_run WHERE state = 'failed' AND execution_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(DISTINCT dag_id) as \"Failed DAGs\" FROM dag_run WHERE state = 'failed' AND start_date > NOW() - INTERVAL '24 hours';",
               "refId": "A"
             }
           ],
@@ -320,8 +374,8 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 4,
-            "x": 20,
+            "w": 3,
+            "x": 18,
             "y": 0
           },
           "id": 6,
@@ -344,7 +398,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Paused DAGs\" FROM dag WHERE is_paused = true AND is_active = true;",
+              "rawSql": "SELECT COUNT(*) as \"Paused DAGs\" FROM dag WHERE is_paused = true AND bundle_name IS NOT NULL;",
               "refId": "A"
             }
           ],
@@ -398,7 +452,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Total Tasks\" FROM task_instance WHERE execution_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(*) as \"Total Tasks\" FROM task_instance WHERE start_date > NOW() - INTERVAL '24 hours';",
               "refId": "A"
             }
           ],
@@ -560,7 +614,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Success Tasks\" FROM task_instance WHERE state = 'success' AND execution_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(*) as \"Success Tasks\" FROM task_instance WHERE state = 'success' AND start_date > NOW() - INTERVAL '24 hours';",
               "refId": "A"
             }
           ],
@@ -614,7 +668,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Failed Tasks\" FROM task_instance WHERE state = 'failed' AND execution_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(*) as \"Failed Tasks\" FROM task_instance WHERE state = 'failed' AND start_date > NOW() - INTERVAL '24 hours';",
               "refId": "A"
             }
           ],
@@ -658,7 +712,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  is_paused as \"Paused\",\n  is_active as \"Active\",\n  last_parsed_time as \"Last Parsed\",\n  last_pickled as \"Last Pickled\",\n  last_expired as \"Last Expired\"\nFROM dag \nWHERE is_active = true\nORDER BY dag_id;",
+              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  is_paused as \"Paused\",\n  bundle_name as \"Bundle\",\n  last_parsed_time as \"Last Parsed\",\n  fileloc as \"File Location\",\n  last_expired as \"Last Expired\"\nFROM dag \nWHERE bundle_name IS NOT NULL\nORDER BY dag_id;",
               "refId": "A"
             }
           ],
@@ -746,7 +800,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  run_id as \"Run ID\",\n  state as \"State\",\n  execution_date as \"Execution Date\",\n  start_date as \"Start Date\",\n  end_date as \"End Date\",\n  EXTRACT(EPOCH FROM (COALESCE(end_date, NOW()) - start_date)) as \"Duration (s)\"\nFROM dag_run \nWHERE execution_date > NOW() - INTERVAL '24 hours'\nORDER BY start_date DESC\nLIMIT 100;",
+              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  run_id as \"Run ID\",\n  state as \"State\",\n  logical_date as \"Logical Date\",\n  start_date as \"Start Date\",\n  end_date as \"End Date\",\n  EXTRACT(EPOCH FROM (COALESCE(end_date, NOW()) - start_date)) as \"Duration (s)\"\nFROM dag_run \nWHERE start_date > NOW() - INTERVAL '24 hours'\nORDER BY start_date DESC\nLIMIT 100;",
               "refId": "A"
             }
           ],

@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-airflow-status-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  airflow-status-dashboard.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "center",
+                "displayMode": "color-background"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "running": {
+                      "color": "green",
+                      "index": 0,
+                      "text": "RUNNING"
+                    },
+                    "idle": {
+                      "color": "light-gray",
+                      "index": 1,
+                      "text": "IDLE"
+                    },
+                    "paused": {
+                      "color": "dark-gray",
+                      "index": 2,
+                      "text": "PAUSED"
+                    },
+                    "failed": {
+                      "color": "red",
+                      "index": 3,
+                      "text": "FAILED"
+                    },
+                    "success": {
+                      "color": "blue",
+                      "index": 4,
+                      "text": "SUCCESS"
+                    }
+                  },
+                  "type": "value"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "gray",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Status"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 120
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "DAG ID"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 300
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 25,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": false,
+                "displayName": "DAG ID"
+              }
+            ]
+          },
+          "pluginVersion": "9.0.0",
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "WITH dag_status AS (\n  SELECT \n    d.dag_id,\n    d.is_paused,\n    dr.state as latest_state,\n    dr.start_date as latest_start\n  FROM dag d\n  LEFT JOIN LATERAL (\n    SELECT state, start_date\n    FROM dag_run\n    WHERE dag_run.dag_id = d.dag_id\n    ORDER BY start_date DESC\n    LIMIT 1\n  ) dr ON true\n  WHERE d.bundle_name IS NOT NULL\n)\nSELECT \n  dag_id as \"DAG ID\",\n  CASE \n    WHEN latest_state = 'running' THEN 'running'\n    WHEN latest_state = 'failed' THEN 'failed'\n    WHEN latest_state = 'success' THEN 'success'\n    WHEN is_paused = true THEN 'paused'\n    ELSE 'idle'\n  END as \"Status\",\n  CASE \n    WHEN latest_start IS NOT NULL THEN TO_CHAR(latest_start, 'YYYY-MM-DD HH24:MI:SS')\n    ELSE 'Never Run'\n  END as \"Last Run\"\nFROM dag_status\nORDER BY dag_id;",
+              "refId": "A"
+            }
+          ],
+          "title": "All DAGs Status",
+          "type": "table"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 27,
+      "style": "dark",
+      "tags": ["airflow", "status"],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Airflow DAGs Status Dashboard",
+      "uid": "airflow-dags-status",
+      "version": 1
+    }
