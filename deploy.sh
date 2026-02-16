@@ -86,7 +86,7 @@ helm repo update
 
 echo ""
 echo "Step 6: Installing Airflow 3.x with Example DAGs..."
-helm install airflow apache-airflow/airflow \
+helm upgrade --install airflow apache-airflow/airflow \
   --namespace airflow \
   --values "$TMP_DIR/values.yaml" \
   --version 1.18.0 \
