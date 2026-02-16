@@ -73,6 +73,10 @@ kubectl apply -f k8s/monitoring/grafana-dashboards-config.yaml
 kubectl apply -f k8s/monitoring/grafana-airflow-dashboard.yaml
 kubectl apply -f k8s/monitoring/grafana-airflow-db-dashboard.yaml
 kubectl apply -f k8s/monitoring/grafana-airflow-status-dashboard.yaml
+kubectl apply -f k8s/monitoring/grafana-airflow-task-performance-dashboard.yaml
+kubectl apply -f k8s/monitoring/grafana-airflow-resource-pool-dashboard.yaml
+kubectl apply -f k8s/monitoring/grafana-airflow-error-debug-dashboard.yaml
+kubectl apply -f k8s/monitoring/grafana-airflow-dependencies-dashboard.yaml
 kubectl apply -f k8s/monitoring/grafana-deployment.yaml
 kubectl apply -f k8s/monitoring/grafana-service.yaml
 
