@@ -114,20 +114,24 @@ WHERE state = 'queued';
 ```sql
 SELECT COUNT(DISTINCT dag_id) as "Success DAGs" 
 FROM dag_run 
-WHERE state = 'success' AND start_date > NOW() - INTERVAL '24 hours';
+WHERE state = 'success' 
+  AND start_date >= $__timeFrom() 
+  AND start_date <= $__timeTo();
 ```
 
 **คำอธิบาย**:
 - **Column `start_date`**: เวลาที่ DAG run เริ่มทำงาน
-- **`INTERVAL '24 hours'`**: กรอง data ย้อนหลัง 24 ชั่วโมง
-- **เหตุผล**: ใช้ time window เพื่อดู recent success rate ไม่รวม historical data ที่ไม่เกี่ยวข้อง
-- **ความสำคัญ**: **Success indicator** - วัด operational health ใน 24 ชั่วโมงล่าสุด ใช้ในการ daily reporting
+- **`$__timeFrom()` และ `$__timeTo()`**: Grafana time range variables - ผู้ใช้เลือก time range ได้เอง
+- **เหตุผล**: Flexible time window ที่ผู้ใช้กำหนดเองได้ (Last 1h, 6h, 24h, 7d, Custom)
+- **ความสำคัญ**: **Success indicator** - วัด operational health ในช่วงเวลาที่เลือก ใช้ในการ reporting
 
 **6. Failed DAGs (24h)**
 ```sql
 SELECT COUNT(DISTINCT dag_id) as "Failed DAGs" 
 FROM dag_run 
-WHERE state = 'failed' AND start_date > NOW() - INTERVAL '24 hours';
+WHERE state = 'failed' 
+  AND start_date >= $__timeFrom() 
+  AND start_date <= $__timeTo();
 ```
 
 **คำอธิบาย**:
@@ -150,7 +154,8 @@ WHERE is_paused = true AND bundle_name IS NOT NULL;
 ```sql
 SELECT COUNT(*) as "Total Tasks" 
 FROM task_instance 
-WHERE start_date > NOW() - INTERVAL '24 hours';
+WHERE start_date >= $__timeFrom() 
+  AND start_date <= $__timeTo();
 ```
 
 **คำอธิบาย**:
@@ -170,15 +175,19 @@ SELECT COUNT(*) as "Queued Tasks"
 FROM task_instance 
 WHERE state = 'queued';
 
--- Success Tasks (24h)
+-- Success Tasks
 SELECT COUNT(*) as "Success Tasks" 
 FROM task_instance 
-WHERE state = 'success' AND start_date > NOW() - INTERVAL '24 hours';
+WHERE state = 'success' 
+  AND start_date >= $__timeFrom() 
+  AND start_date <= $__timeTo();
 
--- Failed Tasks (24h)
+-- Failed Tasks
 SELECT COUNT(*) as "Failed Tasks" 
 FROM task_instance 
-WHERE state = 'failed' AND start_date > NOW() - INTERVAL '24 hours';
+WHERE state = 'failed' 
+  AND start_date >= $__timeFrom() 
+  AND start_date <= $__timeTo();
 ```
 
 **คำอธิบาย**:
@@ -239,7 +248,8 @@ SELECT
   end_date as "End Date",
   EXTRACT(EPOCH FROM (COALESCE(end_date, NOW()) - start_date)) as "Duration (s)"
 FROM dag_run 
-WHERE start_date > NOW() - INTERVAL '24 hours'
+WHERE start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
 ORDER BY start_date DESC
 LIMIT 100;
 ```
@@ -375,7 +385,8 @@ SELECT
 SELECT AVG(EXTRACT(EPOCH FROM (end_date - start_date))) as "Avg Duration" 
 FROM task_instance 
 WHERE state = 'success' 
-  AND start_date > NOW() - INTERVAL '24 hours' 
+  AND start_date >= $__timeFrom() 
+  AND start_date <= $__timeTo()
   AND end_date IS NOT NULL;
 ```
 
@@ -406,7 +417,8 @@ WHERE state = 'success'
 SELECT COUNT(*) as "Tasks with Retries" 
 FROM task_instance 
 WHERE try_number > 1 
-  AND start_date > NOW() - INTERVAL '24 hours';
+  AND start_date >= $__timeFrom() 
+  AND start_date <= $__timeTo();
 ```
 
 **คำอธิบาย**:
@@ -428,7 +440,8 @@ WHERE try_number > 1
 SELECT AVG(EXTRACT(EPOCH FROM (start_date - queued_dttm))) as "Avg Queue Time" 
 FROM task_instance 
 WHERE state IN ('success', 'failed') 
-  AND start_date > NOW() - INTERVAL '24 hours' 
+  AND start_date >= $__timeFrom() 
+  AND start_date <= $__timeTo()
   AND queued_dttm IS NOT NULL;
 ```
 
@@ -463,7 +476,8 @@ SELECT
   AVG(EXTRACT(EPOCH FROM (end_date - start_date))) as value
 FROM task_instance 
 WHERE state = 'success' 
-  AND start_date > NOW() - INTERVAL '7 days'
+  AND start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
   AND end_date IS NOT NULL
 GROUP BY DATE_TRUNC('hour', start_date), dag_id
 ORDER BY time;
@@ -497,7 +511,8 @@ SELECT
   EXTRACT(EPOCH FROM (end_date - start_date)) as "Duration"
 FROM task_instance 
 WHERE state = 'success' 
-  AND start_date > NOW() - INTERVAL '24 hours'
+  AND start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
   AND end_date IS NOT NULL
 ORDER BY "Duration" DESC
 LIMIT 10;
@@ -527,7 +542,8 @@ SELECT
   COUNT(*) as "Retry Count"
 FROM task_instance 
 WHERE try_number > 1 
-  AND start_date > NOW() - INTERVAL '7 days'
+  AND start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
 GROUP BY dag_id
 ORDER BY "Retry Count" DESC
 LIMIT 10;
@@ -556,7 +572,8 @@ SELECT
   dag_id,
   (COUNT(CASE WHEN try_number > 1 THEN 1 END)::float / NULLIF(COUNT(*)::float, 0) * 100) as value
 FROM task_instance 
-WHERE start_date > NOW() - INTERVAL '7 days'
+WHERE start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
 GROUP BY DATE_TRUNC('hour', start_date), dag_id
 HAVING COUNT(*) > 0
 ORDER BY time;
@@ -599,7 +616,8 @@ SELECT
   EXTRACT(EPOCH FROM (COALESCE(end_date, NOW()) - start_date)) as "Duration (s)"
 FROM task_instance 
 WHERE try_number > 1 
-  AND start_date > NOW() - INTERVAL '24 hours'
+  AND start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
 ORDER BY start_date DESC
 LIMIT 100;
 ```
@@ -769,7 +787,8 @@ SELECT
   pool,
   COUNT(*) as value
 FROM task_instance 
-WHERE start_date > NOW() - INTERVAL '7 days'
+WHERE start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
   AND pool IS NOT NULL
 GROUP BY DATE_TRUNC('hour', start_date), pool
 ORDER BY time;
@@ -797,7 +816,8 @@ SELECT
   COALESCE(pool, 'default_pool') as metric,
   COUNT(*) as value
 FROM task_instance 
-WHERE start_date > NOW() - INTERVAL '24 hours'
+WHERE start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
 GROUP BY pool
 ORDER BY value DESC;
 ```
@@ -822,7 +842,8 @@ SELECT
   COALESCE(pool, 'default_pool') as "Pool",
   COUNT(*) as "Task Count"
 FROM task_instance 
-WHERE start_date > NOW() - INTERVAL '7 days'
+WHERE start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
 GROUP BY pool
 ORDER BY "Task Count" DESC
 LIMIT 10;
@@ -957,7 +978,8 @@ SELECT
   COUNT(*) as value
 FROM task_instance 
 WHERE state = 'failed' 
-  AND start_date > NOW() - INTERVAL '7 days'
+  AND start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
 GROUP BY DATE_TRUNC('hour', start_date), dag_id
 ORDER BY time;
 ```
@@ -980,7 +1002,8 @@ SELECT
   COUNT(*) as "Failure Count"
 FROM task_instance 
 WHERE state = 'failed' 
-  AND start_date > NOW() - INTERVAL '7 days'
+  AND start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
 GROUP BY dag_id
 ORDER BY "Failure Count" DESC
 LIMIT 10;
@@ -1001,7 +1024,8 @@ SELECT
   EXTRACT(EPOCH FROM (COALESCE(end_date, NOW()) - start_date)) as "Duration (s)"
 FROM task_instance 
 WHERE state = 'failed' 
-  AND start_date > NOW() - INTERVAL '24 hours'
+  AND start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
 ORDER BY start_date DESC
 LIMIT 100;
 ```
@@ -1053,7 +1077,8 @@ SELECT
      NULLIF(COUNT(*)::float, 0) * 100)::numeric, 2
   ) as "Failure Rate (%)"
 FROM dag_run 
-WHERE start_date > NOW() - INTERVAL '7 days'
+WHERE start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
 GROUP BY dag_id
 HAVING COUNT(*) > 0
 ORDER BY "Failure Rate (%)" DESC
@@ -1118,10 +1143,11 @@ SELECT COUNT(DISTINCT dag_id) as "Total DAGs"
 FROM dag 
 WHERE bundle_name IS NOT NULL;
 
--- Total Task Instances (24h)
+-- Total Task Instances
 SELECT COUNT(*) as "Total Tasks" 
 FROM task_instance 
-WHERE start_date > NOW() - INTERVAL '24 hours';
+WHERE start_date >= $__timeFrom()
+  AND start_date <= $__timeTo();
 
 -- DAGs with Asset Dependencies
 SELECT COUNT(DISTINCT dag_id) as "DAGs with Asset Dependencies" 
@@ -1149,19 +1175,19 @@ SELECT COUNT(DISTINCT id) as "Total Assets" FROM asset;
 
 ```sql
 SELECT 
-  dag_id as "DAG ID",
-  COUNT(DISTINCT task_id) as "Task Count",
-  is_paused as "Paused",
-  schedule_interval as "Schedule",
-  tags::text as "Tags"
+  d.dag_id as "DAG ID",
+  COUNT(DISTINCT ti.task_id) as "Task Count",
+  d.is_paused as "Paused",
+  d.timetable_summary as "Schedule"
 FROM dag d
 LEFT JOIN (
   SELECT DISTINCT dag_id, task_id 
   FROM task_instance 
-  WHERE start_date > NOW() - INTERVAL '7 days'
+  WHERE start_date >= $__timeFrom()
+    AND start_date <= $__timeTo()
 ) ti ON d.dag_id = ti.dag_id
 WHERE d.bundle_name IS NOT NULL
-GROUP BY d.dag_id, d.is_paused, d.schedule_interval, d.tags
+GROUP BY d.dag_id, d.is_paused, d.timetable_summary
 ORDER BY "Task Count" DESC
 LIMIT 20;
 ```
@@ -1177,8 +1203,8 @@ LIMIT 20;
    - **Time window 7 days**: Focus ที่ active tasks
    - **ความสำคัญ**: Accurate complexity measurement
 
-3. **`schedule_interval`**: Schedule pattern ของ DAG
-   - **เหตุผล**: เข้าใจ execution frequency
+3. **`timetable_summary`**: Schedule pattern ของ DAG (Airflow 3.x)
+   - **เหตุผล**: เข้าใจ execution frequency - แทนที่ `schedule_interval` ใน Airflow 2.x
    - **ความสำคัญ**: Context สำหรับ complexity - DAG ที่ run บ่อยต้อง optimize มากกว่า
 
 4. **`tags::text`**: Tags ของ DAG
@@ -1198,7 +1224,8 @@ SELECT
   operator as "Operator Type",
   COUNT(*) as "Usage Count"
 FROM task_instance 
-WHERE start_date > NOW() - INTERVAL '7 days'
+WHERE start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
   AND operator IS NOT NULL
 GROUP BY operator
 ORDER BY "Usage Count" DESC
@@ -1390,7 +1417,7 @@ SELECT
   MAX(ae.timestamp) as "Last Updated"
 FROM asset a
 LEFT JOIN asset_event ae ON a.id = ae.asset_id
-WHERE ae.timestamp > NOW() - INTERVAL '7 days' OR ae.timestamp IS NULL
+WHERE (ae.timestamp >= $__timeFrom() AND ae.timestamp <= $__timeTo()) OR ae.timestamp IS NULL
 GROUP BY a.uri, a.name
 ORDER BY "Event Count" DESC NULLS LAST
 LIMIT 30;
@@ -1497,12 +1524,47 @@ Grafana Table Panel แสดงเป็นตารางแนวตั้ง
 | `dataset_event` | `asset_event` | สอดคล้องกับ asset terminology | ต้องเปลี่ยน table name |
 | `dag_schedule_dataset_reference` | `dag_schedule_asset_reference` | สอดคล้องกับ asset terminology | ต้องเปลี่ยน table name |
 | `sla_miss` | ❌ **ถูกลบออก** | SLA tracking ถูก redesign | ไม่สามารถใช้ table นี้ได้ |
+| `stack_trace` | `stacktrace` | Column name ไม่มี underscore | ต้องเปลี่ยน column name ใน import_error table |
+| `schedule_interval` | `timetable_summary` | Timetable-based scheduling | ต้องเปลี่ยน column name ใน dag table |
+| `tags` | ❌ **ถูกลบออก** | Tags ไม่มีใน dag table แล้ว | ไม่สามารถใช้ column นี้ได้ |
 
 **Migration Tips**:
 - ใช้ search & replace สำหรับ column/table names
 - Test queries กับ Airflow 3.x database ก่อน deploy
 - Update documentation และ runbooks
 - Train team เกี่ยวกับ schema changes
+
+---
+
+### ⏰ Grafana Time Range Variables
+
+**ทุก dashboards** ใช้ **Grafana time range variables** แทน hardcoded `INTERVAL`:
+
+**เดิม (Hardcoded):**
+```sql
+WHERE start_date > NOW() - INTERVAL '24 hours'
+WHERE start_date > NOW() - INTERVAL '7 days'
+```
+
+**ใหม่ (Dynamic Time Range):**
+```sql
+WHERE start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
+```
+
+**ข้อดี:**
+- ✅ **Flexible**: ผู้ใช้เลือก time range ได้เอง (Last 1h, 6h, 24h, 7d, 30d, Custom)
+- ✅ **Consistent**: Time range sync กับทุก panels ใน dashboard
+- ✅ **Better UX**: ใช้ Grafana time picker UI มาตรฐาน
+- ✅ **Dynamic**: ไม่ต้อง hardcode time windows
+
+**Default Time Range**: ทุก dashboard ตั้งค่าเริ่มต้นเป็น **"Last 24 hours"** (`from: "now-24h", to: "now"`)
+
+**การใช้งาน:**
+1. เปิด dashboard ใน Grafana
+2. คลิกที่ time picker ด้านบนขวา
+3. เลือก time range ที่ต้องการ (Quick ranges หรือ Custom range)
+4. ทุก panels จะ refresh และแสดงข้อมูลตาม time range ที่เลือก
 
 ---
 
