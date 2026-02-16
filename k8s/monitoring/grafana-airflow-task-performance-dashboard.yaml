@@ -31,63 +31,6 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 1
-                  }
-                ]
-              },
-              "unit": "none"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 4,
-            "w": 6,
-            "x": 0,
-            "y": 0
-          },
-          "id": 1,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "none",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "reduceOptions": {
-              "values": false,
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": ""
-            },
-            "textMode": "auto"
-          },
-          "targets": [
-            {
-              "datasource": "Airflow PostgreSQL",
-              "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"SLA Misses (24h)\" FROM sla_miss WHERE timestamp > NOW() - INTERVAL '24 hours';",
-              "refId": "A"
-            }
-          ],
-          "title": "SLA Misses (24h)",
-          "type": "stat"
-        },
-        {
-          "datasource": "Airflow PostgreSQL",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
                   }
                 ]
               },
@@ -97,11 +40,11 @@ data:
           },
           "gridPos": {
             "h": 4,
-            "w": 6,
-            "x": 6,
+            "w": 8,
+            "x": 0,
             "y": 0
           },
-          "id": 2,
+          "id": 1,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
@@ -154,11 +97,11 @@ data:
           },
           "gridPos": {
             "h": 4,
-            "w": 6,
-            "x": 12,
+            "w": 8,
+            "x": 8,
             "y": 0
           },
-          "id": 3,
+          "id": 2,
           "options": {
             "colorMode": "value",
             "graphMode": "none",
@@ -207,11 +150,11 @@ data:
           },
           "gridPos": {
             "h": 4,
-            "w": 6,
-            "x": 18,
+            "w": 8,
+            "x": 16,
             "y": 0
           },
-          "id": 4,
+          "id": 3,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
@@ -285,7 +228,7 @@ data:
             "x": 0,
             "y": 4
           },
-          "id": 5,
+          "id": 4,
           "options": {
             "legend": {
               "calcs": ["mean", "max"],
@@ -355,7 +298,7 @@ data:
             "x": 12,
             "y": 4
           },
-          "id": 6,
+          "id": 5,
           "options": {
             "legend": {
               "calcs": [],
@@ -376,90 +319,6 @@ data:
           ],
           "title": "Top 10 Longest Running Tasks (24h)",
           "type": "barchart"
-        },
-        {
-          "datasource": "Airflow PostgreSQL",
-          "fieldConfig": {
-            "defaults": {
-              "custom": {
-                "align": "left",
-                "displayMode": "auto",
-                "cellOptions": {
-                  "type": "auto"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Duration (s)"
-                },
-                "properties": [
-                  {
-                    "id": "custom.displayMode",
-                    "value": "color-background"
-                  },
-                  {
-                    "id": "thresholds",
-                    "value": {
-                      "mode": "absolute",
-                      "steps": [
-                        {
-                          "color": "green",
-                          "value": null
-                        },
-                        {
-                          "color": "yellow",
-                          "value": 300
-                        },
-                        {
-                          "color": "red",
-                          "value": 600
-                        }
-                      ]
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 12
-          },
-          "id": 7,
-          "options": {
-            "showHeader": true,
-            "sortBy": [
-              {
-                "desc": true,
-                "displayName": "Timestamp"
-              }
-            ]
-          },
-          "targets": [
-            {
-              "datasource": "Airflow PostgreSQL",
-              "format": "table",
-              "rawSql": "SELECT \n  timestamp as \"Timestamp\",\n  dag_id as \"DAG ID\",\n  task_id as \"Task ID\",\n  execution_date as \"Execution Date\",\n  description as \"Description\"\nFROM sla_miss \nWHERE timestamp > NOW() - INTERVAL '7 days'\nORDER BY timestamp DESC\nLIMIT 50;",
-              "refId": "A"
-            }
-          ],
-          "title": "Recent SLA Misses (7 days)",
-          "type": "table"
         },
         {
           "datasource": "Airflow PostgreSQL",
@@ -506,10 +365,10 @@ data:
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 12,
+            "x": 0,
             "y": 12
           },
-          "id": 8,
+          "id": 6,
           "options": {
             "legend": {
               "calcs": [],
@@ -530,6 +389,78 @@ data:
           ],
           "title": "Top DAGs by Retry Count (7 days)",
           "type": "barchart"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "Retry Rate %",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 20,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "id": 7,
+          "options": {
+            "legend": {
+              "calcs": ["mean", "max"],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "time_series",
+              "rawSql": "SELECT \n  DATE_TRUNC('hour', start_date) as time,\n  dag_id,\n  (COUNT(CASE WHEN try_number > 1 THEN 1 END)::float / NULLIF(COUNT(*)::float, 0) * 100) as value\nFROM task_instance \nWHERE start_date > NOW() - INTERVAL '7 days'\nGROUP BY DATE_TRUNC('hour', start_date), dag_id\nHAVING COUNT(*) > 0\nORDER BY time;",
+              "refId": "A"
+            }
+          ],
+          "title": "Retry Rate Trend by DAG (7 days)",
+          "type": "timeseries"
         },
         {
           "datasource": "Airflow PostgreSQL",
@@ -589,12 +520,12 @@ data:
             ]
           },
           "gridPos": {
-            "h": 8,
+            "h": 10,
             "w": 24,
             "x": 0,
             "y": 20
           },
-          "id": 9,
+          "id": 8,
           "options": {
             "showHeader": true,
             "sortBy": [
@@ -619,7 +550,7 @@ data:
       "refresh": "30s",
       "schemaVersion": 27,
       "style": "dark",
-      "tags": ["airflow", "performance", "sla"],
+      "tags": ["airflow", "performance", "task"],
       "templating": {
         "list": []
       },
@@ -629,7 +560,7 @@ data:
       },
       "timepicker": {},
       "timezone": "",
-      "title": "Airflow Task Performance & SLA",
-      "uid": "airflow-task-performance-sla",
+      "title": "Airflow Task Performance",
+      "uid": "airflow-task-performance",
       "version": 1
     }

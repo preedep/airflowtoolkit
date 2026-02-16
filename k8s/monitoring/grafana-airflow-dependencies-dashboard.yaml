@@ -169,11 +169,11 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(DISTINCT dag_id) as \"DAGs with Dependencies\" FROM dag_schedule_dataset_reference;",
+              "rawSql": "SELECT COUNT(DISTINCT dag_id) as \"DAGs with Asset Dependencies\" FROM dag_schedule_asset_reference;",
               "refId": "A"
             }
           ],
-          "title": "DAGs with Dataset Dependencies",
+          "title": "DAGs with Asset Dependencies",
           "type": "stat"
         },
         {
@@ -222,11 +222,11 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(DISTINCT dataset_id) as \"Total Datasets\" FROM dataset;",
+              "rawSql": "SELECT COUNT(DISTINCT id) as \"Total Assets\" FROM asset;",
               "refId": "A"
             }
           ],
-          "title": "Total Datasets",
+          "title": "Total Assets",
           "type": "stat"
         },
         {
@@ -415,11 +415,11 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  d.id as \"Dataset ID\",\n  d.uri as \"URI\",\n  d.extra::text as \"Extra Info\",\n  d.created_at as \"Created At\",\n  d.updated_at as \"Updated At\"\nFROM dataset d\nORDER BY d.updated_at DESC NULLS LAST\nLIMIT 20;",
+              "rawSql": "SELECT \n  a.id as \"Asset ID\",\n  a.uri as \"URI\",\n  a.name as \"Name\",\n  a.group as \"Group\",\n  a.created_at as \"Created At\",\n  a.updated_at as \"Updated At\"\nFROM asset a\nORDER BY a.updated_at DESC NULLS LAST\nLIMIT 20;",
               "refId": "A"
             }
           ],
-          "title": "Dataset Registry",
+          "title": "Asset Registry",
           "type": "table"
         },
         {
@@ -461,11 +461,11 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  dsr.dag_id as \"DAG ID\",\n  d.uri as \"Dataset URI\",\n  dsr.created_at as \"Created At\"\nFROM dag_schedule_dataset_reference dsr\nJOIN dataset d ON dsr.dataset_id = d.id\nORDER BY dsr.dag_id, d.uri\nLIMIT 50;",
+              "rawSql": "SELECT \n  dsar.dag_id as \"DAG ID\",\n  a.uri as \"Asset URI\",\n  a.name as \"Asset Name\",\n  dsar.created_at as \"Created At\"\nFROM dag_schedule_asset_reference dsar\nJOIN asset a ON dsar.asset_id = a.id\nORDER BY dsar.dag_id, a.uri\nLIMIT 50;",
               "refId": "A"
             }
           ],
-          "title": "DAG Dataset Dependencies",
+          "title": "DAG Asset Dependencies",
           "type": "table"
         },
         {
@@ -531,11 +531,11 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "time_series",
-              "rawSql": "SELECT \n  DATE_TRUNC('hour', de.timestamp) as time,\n  d.uri as metric,\n  COUNT(*) as value\nFROM dataset_event de\nJOIN dataset d ON de.dataset_id = d.id\nWHERE de.timestamp > NOW() - INTERVAL '7 days'\nGROUP BY DATE_TRUNC('hour', de.timestamp), d.uri\nORDER BY time;",
+              "rawSql": "SELECT \n  DATE_TRUNC('hour', ae.timestamp) as time,\n  a.uri as metric,\n  COUNT(*) as value\nFROM asset_event ae\nJOIN asset a ON ae.asset_id = a.id\nWHERE ae.timestamp > NOW() - INTERVAL '7 days'\nGROUP BY DATE_TRUNC('hour', ae.timestamp), a.uri\nORDER BY time;",
               "refId": "A"
             }
           ],
-          "title": "Dataset Update Events (7 days)",
+          "title": "Asset Update Events (7 days)",
           "type": "timeseries"
         },
         {
@@ -701,18 +701,18 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  d.uri as \"Dataset URI\",\n  COUNT(de.id) as \"Event Count\",\n  MAX(de.timestamp) as \"Last Updated\",\n  de.extra::text as \"Extra Info\"\nFROM dataset d\nLEFT JOIN dataset_event de ON d.id = de.dataset_id\nWHERE de.timestamp > NOW() - INTERVAL '7 days' OR de.timestamp IS NULL\nGROUP BY d.uri, de.extra::text\nORDER BY \"Event Count\" DESC NULLS LAST\nLIMIT 30;",
+              "rawSql": "SELECT \n  a.uri as \"Asset URI\",\n  a.name as \"Asset Name\",\n  COUNT(ae.id) as \"Event Count\",\n  MAX(ae.timestamp) as \"Last Updated\"\nFROM asset a\nLEFT JOIN asset_event ae ON a.id = ae.asset_id\nWHERE ae.timestamp > NOW() - INTERVAL '7 days' OR ae.timestamp IS NULL\nGROUP BY a.uri, a.name\nORDER BY \"Event Count\" DESC NULLS LAST\nLIMIT 30;",
               "refId": "A"
             }
           ],
-          "title": "Dataset Activity (7 days)",
+          "title": "Asset Activity (7 days)",
           "type": "table"
         }
       ],
       "refresh": "1m",
       "schemaVersion": 27,
       "style": "dark",
-      "tags": ["airflow", "dependencies", "lineage"],
+      "tags": ["airflow", "dependencies", "lineage", "assets"],
       "templating": {
         "list": []
       },
