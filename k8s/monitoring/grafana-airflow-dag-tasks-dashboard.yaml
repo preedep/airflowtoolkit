@@ -1,0 +1,433 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-airflow-dag-tasks-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  airflow-dag-tasks-dashboard.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "displayMode": "auto"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Task ID"
+                },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Open Task in Airflow",
+                        "url": "${airflow_url}/dags/${dag_id}?task_id=${__value.raw}",
+                        "targetBlank": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "State"
+                },
+                "properties": [
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-background"
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "options": {
+                          "success": {
+                            "color": "green",
+                            "index": 0
+                          },
+                          "failed": {
+                            "color": "red",
+                            "index": 1
+                          },
+                          "running": {
+                            "color": "blue",
+                            "index": 2
+                          },
+                          "queued": {
+                            "color": "yellow",
+                            "index": 3
+                          },
+                          "up_for_retry": {
+                            "color": "orange",
+                            "index": 4
+                          }
+                        },
+                        "type": "value"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Duration (s)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.displayMode",
+                    "value": "gradient-gauge"
+                  },
+                  {
+                    "id": "unit",
+                    "value": "s"
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 60
+                        },
+                        {
+                          "color": "red",
+                          "value": 300
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Start Date"
+              }
+            ]
+          },
+          "pluginVersion": "9.0.0",
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT \n  ti.task_id as \"Task ID\",\n  ti.run_id as \"Run ID\",\n  ti.state as \"State\",\n  ti.start_date as \"Start Date\",\n  ti.end_date as \"End Date\",\n  EXTRACT(EPOCH FROM (COALESCE(ti.end_date, NOW()) - ti.start_date)) as \"Duration (s)\",\n  ti.try_number as \"Try Number\",\n  ti.max_tries as \"Max Tries\",\n  ti.operator as \"Operator\",\n  ti.pool as \"Pool\",\n  ti.priority_weight as \"Priority\"\nFROM task_instance ti\nWHERE ti.dag_id = '$dag_id'\n  AND ti.start_date >= $__timeFrom()\n  AND ti.start_date <= $__timeTo()\nORDER BY ti.start_date DESC\nLIMIT 100;",
+              "refId": "A"
+            }
+          ],
+          "title": "Tasks for DAG: $dag_id",
+          "type": "table"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 12
+          },
+          "id": 2,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "9.0.0",
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT COUNT(*) as \"Total Tasks\" FROM task_instance WHERE dag_id = '$dag_id' AND start_date >= $__timeFrom() AND start_date <= $__timeTo();",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Tasks",
+          "type": "stat"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 12
+          },
+          "id": 3,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "9.0.0",
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT COUNT(*) as \"Success Tasks\" FROM task_instance WHERE dag_id = '$dag_id' AND state = 'success' AND start_date >= $__timeFrom() AND start_date <= $__timeTo();",
+              "refId": "A"
+            }
+          ],
+          "title": "Success Tasks",
+          "type": "stat"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 12,
+            "y": 12
+          },
+          "id": 4,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "9.0.0",
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT COUNT(*) as \"Failed Tasks\" FROM task_instance WHERE dag_id = '$dag_id' AND state = 'failed' AND start_date >= $__timeFrom() AND start_date <= $__timeTo();",
+              "refId": "A"
+            }
+          ],
+          "title": "Failed Tasks",
+          "type": "stat"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 18,
+            "y": 12
+          },
+          "id": 5,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "9.0.0",
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (end_date - start_date)))::numeric, 2) as \"Avg Duration\" FROM task_instance WHERE dag_id = '$dag_id' AND state = 'success' AND start_date >= $__timeFrom() AND start_date <= $__timeTo() AND end_date IS NOT NULL;",
+              "refId": "A"
+            }
+          ],
+          "title": "Avg Task Duration",
+          "type": "stat"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 27,
+      "style": "dark",
+      "tags": ["airflow", "tasks", "dag"],
+      "templating": {
+        "list": [
+          {
+            "name": "airflow_url",
+            "type": "textbox",
+            "label": "Airflow URL",
+            "description": "Airflow web UI base URL (e.g., http://localhost:30080)",
+            "query": "http://localhost:30080",
+            "current": {
+              "value": "http://localhost:30080",
+              "text": "http://localhost:30080"
+            },
+            "options": [
+              {
+                "value": "http://localhost:30080",
+                "text": "http://localhost:30080"
+              }
+            ]
+          },
+          {
+            "name": "dag_id",
+            "type": "query",
+            "label": "DAG ID",
+            "description": "Select a DAG to view its tasks",
+            "datasource": "Airflow PostgreSQL",
+            "query": "SELECT dag_id FROM dag WHERE bundle_name IS NOT NULL ORDER BY dag_id",
+            "refresh": 1,
+            "regex": "",
+            "sort": 0,
+            "multi": false,
+            "includeAll": false,
+            "allValue": null,
+            "current": {},
+            "options": []
+          }
+        ]
+      },
+      "time": {
+        "from": "now-24h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Airflow DAG Tasks Explorer",
+      "uid": "airflow-dag-tasks-explorer",
+      "version": 1
+    }

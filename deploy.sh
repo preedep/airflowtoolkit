@@ -7,6 +7,19 @@ echo "Airflow 3.x on Kubernetes Deployment"
 echo "=========================================="
 echo ""
 
+# Load environment variables from .env file if it exists
+if [ -f .env ]; then
+    echo "📄 Loading configuration from .env file..."
+    export $(grep -v '^#' .env | xargs)
+else
+    echo "⚠️  No .env file found, using defaults..."
+fi
+
+# Set default AIRFLOW_HOST if not defined
+AIRFLOW_HOST=${AIRFLOW_HOST:-http://localhost:30080}
+echo "🌐 Airflow Host: $AIRFLOW_HOST"
+echo ""
+
 # Detect platform and set appropriate storage class
 STORAGE_CLASS="hostpath"
 if kubectl get storageclass microk8s-hostpath &> /dev/null; then
@@ -33,6 +46,16 @@ done
 
 # Process Airflow values.yaml with correct storage class
 sed "s/storageClassName: .*/storageClassName: $STORAGE_CLASS/" k8s/airflow/values.yaml > "$TMP_DIR/values.yaml"
+
+# Process Grafana dashboard files with AIRFLOW_HOST
+for dashboard_file in k8s/monitoring/grafana-airflow-*.yaml; do
+    sed "s|\"query\": \"http://localhost:30080\"|\"query\": \"$AIRFLOW_HOST\"|g; s|\"value\": \"http://localhost:30080\"|\"value\": \"$AIRFLOW_HOST\"|g; s|\"text\": \"http://localhost:30080\"|\"text\": \"$AIRFLOW_HOST\"|g" "$dashboard_file" > "$TMP_DIR/$(basename $dashboard_file)"
+done
+
+# Also process the DAG tasks explorer dashboard
+if [ -f k8s/monitoring/grafana-airflow-dag-tasks-dashboard.yaml ]; then
+    sed "s|\"query\": \"http://localhost:30080\"|\"query\": \"$AIRFLOW_HOST\"|g; s|\"value\": \"http://localhost:30080\"|\"value\": \"$AIRFLOW_HOST\"|g; s|\"text\": \"http://localhost:30080\"|\"text\": \"$AIRFLOW_HOST\"|g" k8s/monitoring/grafana-airflow-dag-tasks-dashboard.yaml > "$TMP_DIR/grafana-airflow-dag-tasks-dashboard.yaml"
+fi
 
 echo "Step 1: Creating namespaces..."
 kubectl apply -f k8s/namespaces.yaml
@@ -70,13 +93,14 @@ echo "Step 4: Deploying Grafana..."
 kubectl apply -f "$TMP_DIR/grafana-pvc.yaml"
 kubectl apply -f k8s/monitoring/grafana-datasources.yaml
 kubectl apply -f k8s/monitoring/grafana-dashboards-config.yaml
-kubectl apply -f k8s/monitoring/grafana-airflow-dashboard.yaml
-kubectl apply -f k8s/monitoring/grafana-airflow-db-dashboard.yaml
-kubectl apply -f k8s/monitoring/grafana-airflow-status-dashboard.yaml
-kubectl apply -f k8s/monitoring/grafana-airflow-task-performance-dashboard.yaml
-kubectl apply -f k8s/monitoring/grafana-airflow-resource-pool-dashboard.yaml
-kubectl apply -f k8s/monitoring/grafana-airflow-error-debug-dashboard.yaml
-kubectl apply -f k8s/monitoring/grafana-airflow-dependencies-dashboard.yaml
+kubectl apply -f "$TMP_DIR/grafana-airflow-dashboard.yaml"
+kubectl apply -f "$TMP_DIR/grafana-airflow-db-dashboard.yaml"
+kubectl apply -f "$TMP_DIR/grafana-airflow-status-dashboard.yaml"
+kubectl apply -f "$TMP_DIR/grafana-airflow-task-performance-dashboard.yaml"
+kubectl apply -f "$TMP_DIR/grafana-airflow-resource-pool-dashboard.yaml"
+kubectl apply -f "$TMP_DIR/grafana-airflow-error-debug-dashboard.yaml"
+kubectl apply -f "$TMP_DIR/grafana-airflow-dependencies-dashboard.yaml"
+kubectl apply -f "$TMP_DIR/grafana-airflow-dag-tasks-dashboard.yaml"
 kubectl apply -f k8s/monitoring/grafana-deployment.yaml
 kubectl apply -f k8s/monitoring/grafana-service.yaml
 
