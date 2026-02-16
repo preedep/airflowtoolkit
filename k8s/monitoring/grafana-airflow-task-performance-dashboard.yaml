@@ -63,7 +63,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT AVG(EXTRACT(EPOCH FROM (end_date - start_date))) as \"Avg Duration\" FROM task_instance WHERE state = 'success' AND start_date > NOW() - INTERVAL '24 hours' AND end_date IS NOT NULL;",
+              "rawSql": "SELECT AVG(EXTRACT(EPOCH FROM (end_date - start_date))) as \"Avg Duration\" FROM task_instance WHERE state = 'success' AND start_date >= $__timeFrom() AND start_date <= $__timeTo() AND end_date IS NOT NULL;",
               "refId": "A"
             }
           ],
@@ -120,7 +120,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Tasks with Retries\" FROM task_instance WHERE try_number > 1 AND start_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(*) as \"Tasks with Retries\" FROM task_instance WHERE try_number > 1 AND start_date >= $__timeFrom() AND start_date <= $__timeTo();",
               "refId": "A"
             }
           ],
@@ -173,7 +173,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT AVG(EXTRACT(EPOCH FROM (start_date - queued_dttm))) as \"Avg Queue Time\" FROM task_instance WHERE state IN ('success', 'failed') AND start_date > NOW() - INTERVAL '24 hours' AND queued_dttm IS NOT NULL;",
+              "rawSql": "SELECT AVG(EXTRACT(EPOCH FROM (start_date - queued_dttm))) as \"Avg Queue Time\" FROM task_instance WHERE state IN ('success', 'failed') AND start_date >= $__timeFrom() AND start_date <= $__timeTo() AND queued_dttm IS NOT NULL;",
               "refId": "A"
             }
           ],
@@ -243,7 +243,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "time_series",
-              "rawSql": "SELECT \n  DATE_TRUNC('hour', start_date) as time,\n  dag_id,\n  AVG(EXTRACT(EPOCH FROM (end_date - start_date))) as value\nFROM task_instance \nWHERE state = 'success' \n  AND start_date > NOW() - INTERVAL '7 days'\n  AND end_date IS NOT NULL\nGROUP BY DATE_TRUNC('hour', start_date), dag_id\nORDER BY time;",
+              "rawSql": "SELECT \n  DATE_TRUNC('hour', start_date) as time,\n  dag_id,\n  AVG(EXTRACT(EPOCH FROM (end_date - start_date))) as value\nFROM task_instance \nWHERE state = 'success' \n  AND start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\n  AND end_date IS NOT NULL\nGROUP BY DATE_TRUNC('hour', start_date), dag_id\nORDER BY time;",
               "refId": "A"
             }
           ],
@@ -313,7 +313,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  dag_id || '.' || task_id as \"Task\",\n  EXTRACT(EPOCH FROM (end_date - start_date)) as \"Duration\"\nFROM task_instance \nWHERE state = 'success' \n  AND start_date > NOW() - INTERVAL '24 hours'\n  AND end_date IS NOT NULL\nORDER BY \"Duration\" DESC\nLIMIT 10;",
+              "rawSql": "SELECT \n  dag_id || '.' || task_id as \"Task\",\n  EXTRACT(EPOCH FROM (end_date - start_date)) as \"Duration\"\nFROM task_instance \nWHERE state = 'success' \n  AND start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\n  AND end_date IS NOT NULL\nORDER BY \"Duration\" DESC\nLIMIT 10;",
               "refId": "A"
             }
           ],
@@ -383,7 +383,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  COUNT(*) as \"Retry Count\"\nFROM task_instance \nWHERE try_number > 1 \n  AND start_date > NOW() - INTERVAL '7 days'\nGROUP BY dag_id\nORDER BY \"Retry Count\" DESC\nLIMIT 10;",
+              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  COUNT(*) as \"Retry Count\"\nFROM task_instance \nWHERE try_number > 1 \n  AND start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\nGROUP BY dag_id\nORDER BY \"Retry Count\" DESC\nLIMIT 10;",
               "refId": "A"
             }
           ],
@@ -455,7 +455,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "time_series",
-              "rawSql": "SELECT \n  DATE_TRUNC('hour', start_date) as time,\n  dag_id,\n  (COUNT(CASE WHEN try_number > 1 THEN 1 END)::float / NULLIF(COUNT(*)::float, 0) * 100) as value\nFROM task_instance \nWHERE start_date > NOW() - INTERVAL '7 days'\nGROUP BY DATE_TRUNC('hour', start_date), dag_id\nHAVING COUNT(*) > 0\nORDER BY time;",
+              "rawSql": "SELECT \n  DATE_TRUNC('hour', start_date) as time,\n  dag_id,\n  (COUNT(CASE WHEN try_number > 1 THEN 1 END)::float / NULLIF(COUNT(*)::float, 0) * 100) as value\nFROM task_instance \nWHERE start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\nGROUP BY DATE_TRUNC('hour', start_date), dag_id\nHAVING COUNT(*) > 0\nORDER BY time;",
               "refId": "A"
             }
           ],
@@ -539,7 +539,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  task_id as \"Task ID\",\n  run_id as \"Run ID\",\n  try_number as \"Try Number\",\n  state as \"State\",\n  start_date as \"Start Date\",\n  end_date as \"End Date\",\n  EXTRACT(EPOCH FROM (COALESCE(end_date, NOW()) - start_date)) as \"Duration (s)\"\nFROM task_instance \nWHERE try_number > 1 \n  AND start_date > NOW() - INTERVAL '24 hours'\nORDER BY start_date DESC\nLIMIT 100;",
+              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  task_id as \"Task ID\",\n  run_id as \"Run ID\",\n  try_number as \"Try Number\",\n  state as \"State\",\n  start_date as \"Start Date\",\n  end_date as \"End Date\",\n  EXTRACT(EPOCH FROM (COALESCE(end_date, NOW()) - start_date)) as \"Duration (s)\"\nFROM task_instance \nWHERE try_number > 1 \n  AND start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\nORDER BY start_date DESC\nLIMIT 100;",
               "refId": "A"
             }
           ],

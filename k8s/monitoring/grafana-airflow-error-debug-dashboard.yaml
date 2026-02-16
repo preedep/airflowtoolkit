@@ -67,11 +67,11 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Failed Tasks (24h)\" FROM task_instance WHERE state = 'failed' AND start_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(*) as \"Failed Tasks\" FROM task_instance WHERE state = 'failed' AND start_date >= $__timeFrom() AND start_date <= $__timeTo();",
               "refId": "A"
             }
           ],
-          "title": "Failed Tasks (24h)",
+          "title": "Failed Tasks",
           "type": "stat"
         },
         {
@@ -181,11 +181,11 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Failed DAG Runs (24h)\" FROM dag_run WHERE state = 'failed' AND start_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(*) as \"Failed DAG Runs\" FROM dag_run WHERE state = 'failed' AND start_date >= $__timeFrom() AND start_date <= $__timeTo();",
               "refId": "A"
             }
           ],
-          "title": "Failed DAG Runs (24h)",
+          "title": "Failed DAG Runs",
           "type": "stat"
         },
         {
@@ -308,11 +308,11 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "time_series",
-              "rawSql": "SELECT \n  DATE_TRUNC('hour', start_date) as time,\n  dag_id,\n  COUNT(*) as value\nFROM task_instance \nWHERE state = 'failed' \n  AND start_date > NOW() - INTERVAL '7 days'\nGROUP BY DATE_TRUNC('hour', start_date), dag_id\nORDER BY time;",
+              "rawSql": "SELECT \n  DATE_TRUNC('hour', start_date) as time,\n  dag_id,\n  COUNT(*) as value\nFROM task_instance \nWHERE state = 'failed' \n  AND start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\nGROUP BY DATE_TRUNC('hour', start_date), dag_id\nORDER BY time;",
               "refId": "A"
             }
           ],
-          "title": "Failed Tasks Trend by DAG (7 days)",
+          "title": "Failed Tasks Trend by DAG",
           "type": "timeseries"
         },
         {
@@ -378,11 +378,11 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  COUNT(*) as \"Failure Count\"\nFROM task_instance \nWHERE state = 'failed' \n  AND start_date > NOW() - INTERVAL '7 days'\nGROUP BY dag_id\nORDER BY \"Failure Count\" DESC\nLIMIT 10;",
+              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  COUNT(*) as \"Failure Count\"\nFROM task_instance \nWHERE state = 'failed' \n  AND start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\nGROUP BY dag_id\nORDER BY \"Failure Count\" DESC\nLIMIT 10;",
               "refId": "A"
             }
           ],
-          "title": "Top 10 DAGs by Failure Count (7 days)",
+          "title": "Top 10 DAGs by Failure Count",
           "type": "barchart"
         },
         {
@@ -453,11 +453,11 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  ti.dag_id as \"DAG ID\",\n  ti.task_id as \"Task ID\",\n  ti.run_id as \"Run ID\",\n  ti.state as \"State\",\n  ti.start_date as \"Start Date\",\n  ti.end_date as \"End Date\",\n  ti.try_number as \"Try Number\",\n  ti.max_tries as \"Max Tries\"\nFROM task_instance ti\nWHERE ti.state = 'failed' \n  AND ti.start_date > NOW() - INTERVAL '24 hours'\nORDER BY ti.start_date DESC\nLIMIT 100;",
+              "rawSql": "SELECT \n  ti.dag_id as \"DAG ID\",\n  ti.task_id as \"Task ID\",\n  ti.run_id as \"Run ID\",\n  ti.state as \"State\",\n  ti.start_date as \"Start Date\",\n  ti.end_date as \"End Date\",\n  ti.try_number as \"Try Number\",\n  ti.max_tries as \"Max Tries\"\nFROM task_instance ti\nWHERE ti.state = 'failed' \n  AND ti.start_date >= $__timeFrom()\n  AND ti.start_date <= $__timeTo()\nORDER BY ti.start_date DESC\nLIMIT 100;",
               "refId": "A"
             }
           ],
-          "title": "Recent Failed Tasks (24h)",
+          "title": "Recent Failed Tasks",
           "type": "table"
         },
         {
@@ -517,7 +517,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  timestamp as \"Timestamp\",\n  filename as \"File\",\n  stack_trace as \"Error Message\"\nFROM import_error \nORDER BY timestamp DESC\nLIMIT 50;",
+              "rawSql": "SELECT \n  timestamp as \"Timestamp\",\n  filename as \"File\",\n  stacktrace as \"Error Message\"\nFROM import_error \nWHERE timestamp >= $__timeFrom()\n  AND timestamp <= $__timeTo()\nORDER BY timestamp DESC\nLIMIT 50;",
               "refId": "A"
             }
           ],
@@ -587,11 +587,11 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  task_id as \"Task ID\",\n  COUNT(*) as \"Failure Count\"\nFROM task_instance \nWHERE state = 'failed' \n  AND start_date > NOW() - INTERVAL '7 days'\nGROUP BY task_id\nORDER BY \"Failure Count\" DESC\nLIMIT 10;",
+              "rawSql": "SELECT \n  task_id as \"Task ID\",\n  COUNT(*) as \"Failure Count\"\nFROM task_instance \nWHERE state = 'failed' \n  AND start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\nGROUP BY task_id\nORDER BY \"Failure Count\" DESC\nLIMIT 10;",
               "refId": "A"
             }
           ],
-          "title": "Top 10 Failing Tasks (7 days)",
+          "title": "Top 10 Failing Tasks",
           "type": "barchart"
         },
         {
@@ -659,11 +659,11 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "time_series",
-              "rawSql": "SELECT \n  DATE_TRUNC('hour', start_date) as time,\n  dag_id,\n  (COUNT(CASE WHEN state = 'failed' THEN 1 END)::float / NULLIF(COUNT(*)::float, 0) * 100) as value\nFROM task_instance \nWHERE start_date > NOW() - INTERVAL '7 days'\n  AND state IN ('success', 'failed')\nGROUP BY DATE_TRUNC('hour', start_date), dag_id\nHAVING COUNT(*) > 0\nORDER BY time;",
+              "rawSql": "SELECT \n  DATE_TRUNC('hour', start_date) as time,\n  dag_id,\n  (COUNT(CASE WHEN state = 'failed' THEN 1 END)::float / NULLIF(COUNT(*)::float, 0) * 100) as value\nFROM task_instance \nWHERE start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\n  AND state IN ('success', 'failed')\nGROUP BY DATE_TRUNC('hour', start_date), dag_id\nHAVING COUNT(*) > 0\nORDER BY time;",
               "refId": "A"
             }
           ],
-          "title": "Error Rate by DAG (7 days)",
+          "title": "Error Rate by DAG",
           "type": "timeseries"
         },
         {
