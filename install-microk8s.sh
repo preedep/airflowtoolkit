@@ -23,21 +23,29 @@ echo "✅ Detected Ubuntu $VERSION"
 echo ""
 
 # Check if microk8s is already installed
+MICROK8S_INSTALLED=false
 if command -v microk8s &> /dev/null; then
+    MICROK8S_INSTALLED=true
     echo "⚠️  MicroK8s is already installed."
-    microk8s version
+    sudo microk8s version
+    echo ""
     read -p "Do you want to reinstall? (y/N): " -n 1 -r
     echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installation cancelled."
-        exit 0
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Removing existing MicroK8s installation..."
+        sudo snap remove microk8s
+        MICROK8S_INSTALLED=false
+    else
+        echo "Skipping installation, will configure existing MicroK8s..."
     fi
-    echo "Removing existing MicroK8s installation..."
-    sudo snap remove microk8s
 fi
 
-echo "Step 1: Installing MicroK8s via snap..."
-sudo snap install microk8s --classic --channel=1.28/stable
+if [ "$MICROK8S_INSTALLED" = false ]; then
+    echo "Step 1: Installing MicroK8s via snap..."
+    sudo snap install microk8s --classic --channel=1.28/stable
+else
+    echo "Step 1: Using existing MicroK8s installation..."
+fi
 
 echo ""
 echo "Step 2: Adding current user to microk8s group..."
