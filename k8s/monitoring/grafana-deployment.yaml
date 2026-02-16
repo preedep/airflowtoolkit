@@ -55,6 +55,9 @@ spec:
         - name: grafana-dashboard-dependencies
           mountPath: /var/lib/grafana/dashboards/airflow-dependencies.json
           subPath: airflow-dependencies-dashboard.json
+        - name: grafana-dashboard-dag-tasks
+          mountPath: /var/lib/grafana/dashboards/airflow-dag-tasks.json
+          subPath: airflow-dag-tasks-dashboard.json
         resources:
           requests:
             memory: "256Mi"
@@ -105,3 +108,6 @@ spec:
       - name: grafana-dashboard-dependencies
         configMap:
           name: grafana-airflow-dependencies-dashboard
+      - name: grafana-dashboard-dag-tasks
+        configMap:
+          name: grafana-airflow-dag-tasks-dashboard

@@ -52,6 +52,11 @@ for dashboard_file in k8s/monitoring/grafana-airflow-*.yaml; do
     sed "s|\"query\": \"http://localhost:30080\"|\"query\": \"$AIRFLOW_HOST\"|g; s|\"value\": \"http://localhost:30080\"|\"value\": \"$AIRFLOW_HOST\"|g; s|\"text\": \"http://localhost:30080\"|\"text\": \"$AIRFLOW_HOST\"|g" "$dashboard_file" > "$TMP_DIR/$(basename $dashboard_file)"
 done
 
+# Also process the DAG tasks explorer dashboard
+if [ -f k8s/monitoring/grafana-airflow-dag-tasks-dashboard.yaml ]; then
+    sed "s|\"query\": \"http://localhost:30080\"|\"query\": \"$AIRFLOW_HOST\"|g; s|\"value\": \"http://localhost:30080\"|\"value\": \"$AIRFLOW_HOST\"|g; s|\"text\": \"http://localhost:30080\"|\"text\": \"$AIRFLOW_HOST\"|g" k8s/monitoring/grafana-airflow-dag-tasks-dashboard.yaml > "$TMP_DIR/grafana-airflow-dag-tasks-dashboard.yaml"
+fi
+
 echo "Step 1: Creating namespaces..."
 kubectl apply -f k8s/namespaces.yaml
 
@@ -95,6 +100,7 @@ kubectl apply -f "$TMP_DIR/grafana-airflow-task-performance-dashboard.yaml"
 kubectl apply -f "$TMP_DIR/grafana-airflow-resource-pool-dashboard.yaml"
 kubectl apply -f "$TMP_DIR/grafana-airflow-error-debug-dashboard.yaml"
 kubectl apply -f "$TMP_DIR/grafana-airflow-dependencies-dashboard.yaml"
+kubectl apply -f "$TMP_DIR/grafana-airflow-dag-tasks-dashboard.yaml"
 kubectl apply -f k8s/monitoring/grafana-deployment.yaml
 kubectl apply -f k8s/monitoring/grafana-service.yaml
 
