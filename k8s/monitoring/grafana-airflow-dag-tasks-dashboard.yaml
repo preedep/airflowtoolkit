@@ -48,7 +48,7 @@ data:
                     "value": [
                       {
                         "title": "Open Task in Airflow",
-                        "url": "${airflow_url}/dags/${dag_id}/grid?task_id=${__value.raw}",
+                        "url": "${airflow_url}/dags/${dag_id}?task_id=${__value.raw}",
                         "targetBlank": true
                       }
                     ]
