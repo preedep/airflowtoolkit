@@ -677,6 +677,24 @@ data:
               {
                 "matcher": {
                   "id": "byName",
+                  "options": "DAG ID"
+                },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Open in Airflow",
+                        "url": "${airflow_url}/dags/${__value.raw}",
+                        "targetBlank": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
                   "options": "Priority Weight"
                 },
                 "properties": [
@@ -708,22 +726,6 @@ data:
               }
             ]
           },
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 28
-          },
-          "id": 11,
-          "options": {
-            "showHeader": true,
-            "sortBy": [
-              {
-                "desc": true,
-                "displayName": "Priority Weight"
-              }
-            ]
-          },
           "targets": [
             {
               "datasource": "Airflow PostgreSQL",
@@ -741,7 +743,25 @@ data:
       "style": "dark",
       "tags": ["airflow", "resource", "pool"],
       "templating": {
-        "list": []
+        "list": [
+          {
+            "name": "airflow_url",
+            "type": "textbox",
+            "label": "Airflow URL",
+            "description": "Airflow web UI base URL (e.g., http://localhost:30080)",
+            "query": "http://localhost:30080",
+            "current": {
+              "value": "http://localhost:30080",
+              "text": "http://localhost:30080"
+            },
+            "options": [
+              {
+                "value": "http://localhost:30080",
+                "text": "http://localhost:30080"
+              }
+            ]
+          }
+        ]
       },
       "time": {
         "from": "now-24h",
