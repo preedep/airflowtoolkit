@@ -55,16 +55,9 @@ sudo microk8s enable storage
 sudo microk8s enable helm3
 
 echo ""
-echo "Step 5: Setting up kubectl alias..."
-if ! grep -q "alias kubectl='microk8s kubectl'" ~/.bashrc; then
-    echo "alias kubectl='microk8s kubectl'" >> ~/.bashrc
-    echo "alias helm='microk8s helm3'" >> ~/.bashrc
-fi
-
-if [ -f ~/.zshrc ] && ! grep -q "alias kubectl='microk8s kubectl'" ~/.zshrc; then
-    echo "alias kubectl='microk8s kubectl'" >> ~/.zshrc
-    echo "alias helm='microk8s helm3'" >> ~/.zshrc
-fi
+echo "Step 5: Creating kubectl and helm symlinks..."
+sudo snap alias microk8s.kubectl kubectl
+sudo snap alias microk8s.helm3 helm
 
 echo ""
 echo "Step 6: Configuring kubectl access..."
@@ -73,27 +66,34 @@ sudo microk8s config > ~/.kube/config
 chmod 600 ~/.kube/config
 
 echo ""
+echo "Step 7: Verifying installation..."
+echo "kubectl version:"
+kubectl version --client --short 2>/dev/null || kubectl version --client
+echo ""
+echo "helm version:"
+helm version --short 2>/dev/null || helm version
+
+echo ""
 echo "=========================================="
 echo "Installation Complete!"
 echo "=========================================="
 echo ""
 echo "⚠️  IMPORTANT: You need to log out and log back in for group changes to take effect!"
 echo ""
-echo "📝 Quick Start Commands:"
-echo "  microk8s status              # Check MicroK8s status"
-echo "  microk8s kubectl get nodes   # List nodes"
-echo "  microk8s kubectl get pods -A # List all pods"
+echo "✅ kubectl and helm are now available as system commands (via snap aliases)"
 echo ""
-echo "🔧 Useful MicroK8s Commands:"
+echo "📝 Standard Kubernetes Commands (work on both Ubuntu and macOS):"
+echo "  kubectl get nodes            # List nodes"
+echo "  kubectl get pods -A          # List all pods"
+echo "  helm version                 # Check Helm version"
+echo ""
+echo "🔧 MicroK8s-specific Commands:"
+echo "  microk8s status              # Check MicroK8s status"
 echo "  microk8s enable <addon>      # Enable addon (dns, storage, helm3, etc.)"
 echo "  microk8s disable <addon>     # Disable addon"
 echo "  microk8s start               # Start MicroK8s"
 echo "  microk8s stop                # Stop MicroK8s"
 echo "  microk8s reset               # Reset MicroK8s to default state"
-echo ""
-echo "🚀 After logging back in, you can use:"
-echo "  kubectl get nodes            # (alias configured)"
-echo "  helm version                 # (alias configured)"
 echo ""
 echo "📦 Available addons to enable:"
 echo "  microk8s enable dashboard    # Kubernetes dashboard"
