@@ -59,7 +59,7 @@ sudo microk8s status --wait-ready
 echo ""
 echo "Step 4: Enabling essential addons..."
 sudo microk8s enable dns
-sudo microk8s enable storage
+sudo microk8s enable hostpath-storage
 sudo microk8s enable helm3
 
 echo ""
