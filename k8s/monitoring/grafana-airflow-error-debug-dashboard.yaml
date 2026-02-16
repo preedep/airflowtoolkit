@@ -517,7 +517,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  timestamp as \"Timestamp\",\n  filename as \"File\",\n  stack_trace as \"Error Message\"\nFROM import_error \nORDER BY timestamp DESC\nLIMIT 50;",
+              "rawSql": "SELECT \n  timestamp as \"Timestamp\",\n  filename as \"File\",\n  stacktrace as \"Error Message\"\nFROM import_error \nORDER BY timestamp DESC\nLIMIT 50;",
               "refId": "A"
             }
           ],

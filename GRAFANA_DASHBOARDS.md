@@ -1010,7 +1010,7 @@ LIMIT 100;
 SELECT 
   timestamp as "Timestamp",
   filename as "Filename",
-  stack_trace as "Error Message"
+  stacktrace as "Error Message"
 FROM import_error 
 ORDER BY timestamp DESC
 LIMIT 50;
@@ -1022,7 +1022,7 @@ LIMIT 50;
    - **เหตุผล**: Identify problematic DAG file
    - **ความสำคัญ**: Direct pointer ไปยัง source ของปัญหา
 
-2. **`stack_trace`**: Error message และ stack trace
+2. **`stacktrace`**: Error message และ stack trace (ไม่มี underscore)
    - **เหตุผล**: Detailed error information
    - **ความสำคัญ**: **Root cause information** - ใช้ในการแก้ไขปัญหา
 
