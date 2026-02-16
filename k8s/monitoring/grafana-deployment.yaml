@@ -43,6 +43,18 @@ spec:
         - name: grafana-dashboard-status
           mountPath: /var/lib/grafana/dashboards/airflow-status.json
           subPath: airflow-status-dashboard.json
+        - name: grafana-dashboard-task-performance
+          mountPath: /var/lib/grafana/dashboards/airflow-task-performance.json
+          subPath: airflow-task-performance-dashboard.json
+        - name: grafana-dashboard-resource-pool
+          mountPath: /var/lib/grafana/dashboards/airflow-resource-pool.json
+          subPath: airflow-resource-pool-dashboard.json
+        - name: grafana-dashboard-error-debug
+          mountPath: /var/lib/grafana/dashboards/airflow-error-debug.json
+          subPath: airflow-error-debug-dashboard.json
+        - name: grafana-dashboard-dependencies
+          mountPath: /var/lib/grafana/dashboards/airflow-dependencies.json
+          subPath: airflow-dependencies-dashboard.json
         resources:
           requests:
             memory: "256Mi"
@@ -81,3 +93,15 @@ spec:
       - name: grafana-dashboard-status
         configMap:
           name: grafana-airflow-status-dashboard
+      - name: grafana-dashboard-task-performance
+        configMap:
+          name: grafana-airflow-task-performance-dashboard
+      - name: grafana-dashboard-resource-pool
+        configMap:
+          name: grafana-airflow-resource-pool-dashboard
+      - name: grafana-dashboard-error-debug
+        configMap:
+          name: grafana-airflow-error-debug-dashboard
+      - name: grafana-dashboard-dependencies
+        configMap:
+          name: grafana-airflow-dependencies-dashboard
