@@ -1,0 +1,728 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-airflow-dependencies-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  airflow-dependencies-dashboard.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT COUNT(DISTINCT dag_id) as \"Total DAGs\" FROM dag WHERE bundle_name IS NOT NULL;",
+              "refId": "A"
+            }
+          ],
+          "title": "Total DAGs",
+          "type": "stat"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 0
+          },
+          "id": 2,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT COUNT(*) as \"Total Tasks\" FROM task_instance WHERE start_date > NOW() - INTERVAL '24 hours';",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Task Instances (24h)",
+          "type": "stat"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "purple",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 12,
+            "y": 0
+          },
+          "id": 3,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT COUNT(DISTINCT dag_id) as \"DAGs with Asset Dependencies\" FROM dag_schedule_asset_reference;",
+              "refId": "A"
+            }
+          ],
+          "title": "DAGs with Asset Dependencies",
+          "type": "stat"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "orange",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 18,
+            "y": 0
+          },
+          "id": 4,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT COUNT(DISTINCT id) as \"Total Assets\" FROM asset;",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Assets",
+          "type": "stat"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "left",
+                "displayMode": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Task Count"
+                },
+                "properties": [
+                  {
+                    "id": "custom.displayMode",
+                    "value": "gradient-gauge"
+                  },
+                  {
+                    "id": "max",
+                    "value": 100
+                  },
+                  {
+                    "id": "min",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 4
+          },
+          "id": 5,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Task Count"
+              }
+            ]
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  COUNT(DISTINCT task_id) as \"Task Count\",\n  is_paused as \"Paused\",\n  schedule_interval as \"Schedule\",\n  tags::text as \"Tags\"\nFROM dag d\nLEFT JOIN (\n  SELECT DISTINCT dag_id, task_id \n  FROM task_instance \n  WHERE start_date > NOW() - INTERVAL '7 days'\n) ti ON d.dag_id = ti.dag_id\nWHERE d.bundle_name IS NOT NULL\nGROUP BY d.dag_id, d.is_paused, d.schedule_interval, d.tags\nORDER BY \"Task Count\" DESC\nLIMIT 20;",
+              "refId": "A"
+            }
+          ],
+          "title": "DAG Complexity (by Task Count)",
+          "type": "table"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 100,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 4
+          },
+          "id": 6,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT \n  operator as \"Operator Type\",\n  COUNT(*) as \"Usage Count\"\nFROM task_instance \nWHERE start_date > NOW() - INTERVAL '7 days'\n  AND operator IS NOT NULL\nGROUP BY operator\nORDER BY \"Usage Count\" DESC\nLIMIT 15;",
+              "refId": "A"
+            }
+          ],
+          "title": "Task Operator Distribution (7 days)",
+          "type": "barchart"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "left",
+                "displayMode": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 12
+          },
+          "id": 7,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Updated At"
+              }
+            ]
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT \n  a.id as \"Asset ID\",\n  a.uri as \"URI\",\n  a.name as \"Name\",\n  a.group as \"Group\",\n  a.created_at as \"Created At\",\n  a.updated_at as \"Updated At\"\nFROM asset a\nORDER BY a.updated_at DESC NULLS LAST\nLIMIT 20;",
+              "refId": "A"
+            }
+          ],
+          "title": "Asset Registry",
+          "type": "table"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "left",
+                "displayMode": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "id": 8,
+          "options": {
+            "showHeader": true,
+            "sortBy": []
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT \n  dsar.dag_id as \"DAG ID\",\n  a.uri as \"Asset URI\",\n  a.name as \"Asset Name\",\n  dsar.created_at as \"Created At\"\nFROM dag_schedule_asset_reference dsar\nJOIN asset a ON dsar.asset_id = a.id\nORDER BY dsar.dag_id, a.uri\nLIMIT 50;",
+              "refId": "A"
+            }
+          ],
+          "title": "DAG Asset Dependencies",
+          "type": "table"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "Events",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 20,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 20
+          },
+          "id": 9,
+          "options": {
+            "legend": {
+              "calcs": ["sum", "max"],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "time_series",
+              "rawSql": "SELECT \n  DATE_TRUNC('hour', ae.timestamp) as time,\n  a.uri as metric,\n  COUNT(*) as value\nFROM asset_event ae\nJOIN asset a ON ae.asset_id = a.id\nWHERE ae.timestamp > NOW() - INTERVAL '7 days'\nGROUP BY DATE_TRUNC('hour', ae.timestamp), a.uri\nORDER BY time;",
+              "refId": "A"
+            }
+          ],
+          "title": "Asset Update Events (7 days)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                }
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 20
+          },
+          "id": 10,
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "values": ["value", "percent"]
+            },
+            "pieType": "pie",
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT \n  COALESCE(tags::text, 'No Tags') as metric,\n  COUNT(*) as value\nFROM dag \nWHERE bundle_name IS NOT NULL\nGROUP BY tags::text\nORDER BY value DESC\nLIMIT 10;",
+              "refId": "A"
+            }
+          ],
+          "title": "DAGs by Tags",
+          "type": "piechart"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "left",
+                "displayMode": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Avg Duration (s)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.displayMode",
+                    "value": "gradient-gauge"
+                  },
+                  {
+                    "id": "max",
+                    "value": 3600
+                  },
+                  {
+                    "id": "min",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 28
+          },
+          "id": 11,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Execution Count"
+              }
+            ]
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  task_id as \"Task ID\",\n  operator as \"Operator\",\n  COUNT(*) as \"Execution Count\",\n  COUNT(CASE WHEN state = 'success' THEN 1 END) as \"Success\",\n  COUNT(CASE WHEN state = 'failed' THEN 1 END) as \"Failed\",\n  ROUND(AVG(EXTRACT(EPOCH FROM (end_date - start_date)))::numeric, 2) as \"Avg Duration (s)\"\nFROM task_instance \nWHERE start_date > NOW() - INTERVAL '7 days'\n  AND end_date IS NOT NULL\nGROUP BY dag_id, task_id, operator\nORDER BY \"Execution Count\" DESC\nLIMIT 50;",
+              "refId": "A"
+            }
+          ],
+          "title": "Task Execution Summary (7 days)",
+          "type": "table"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "left",
+                "displayMode": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 36
+          },
+          "id": 12,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Event Count"
+              }
+            ]
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT \n  a.uri as \"Asset URI\",\n  a.name as \"Asset Name\",\n  COUNT(ae.id) as \"Event Count\",\n  MAX(ae.timestamp) as \"Last Updated\"\nFROM asset a\nLEFT JOIN asset_event ae ON a.id = ae.asset_id\nWHERE ae.timestamp > NOW() - INTERVAL '7 days' OR ae.timestamp IS NULL\nGROUP BY a.uri, a.name\nORDER BY \"Event Count\" DESC NULLS LAST\nLIMIT 30;",
+              "refId": "A"
+            }
+          ],
+          "title": "Asset Activity (7 days)",
+          "type": "table"
+        }
+      ],
+      "refresh": "1m",
+      "schemaVersion": 27,
+      "style": "dark",
+      "tags": ["airflow", "dependencies", "lineage", "assets"],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-24h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Airflow DAG Dependencies & Lineage",
+      "uid": "airflow-dependencies-lineage",
+      "version": 1
+    }

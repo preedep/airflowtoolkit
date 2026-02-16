@@ -7,13 +7,40 @@ echo "Airflow 3.x on Kubernetes Deployment"
 echo "=========================================="
 echo ""
 
+# Detect platform and set appropriate storage class
+STORAGE_CLASS="hostpath"
+if kubectl get storageclass microk8s-hostpath &> /dev/null; then
+    STORAGE_CLASS="microk8s-hostpath"
+    echo "✅ Detected microk8s platform"
+elif kubectl get storageclass hostpath &> /dev/null; then
+    STORAGE_CLASS="hostpath"
+    echo "✅ Detected Docker Desktop platform"
+else
+    echo "⚠️  No known storage class found, using default: $STORAGE_CLASS"
+fi
+
+echo "Using storage class: $STORAGE_CLASS"
+echo ""
+
+# Create temporary directory for processed manifests
+TMP_DIR=$(mktemp -d)
+trap "rm -rf $TMP_DIR" EXIT
+
+# Process PVC files with correct storage class
+for pvc_file in k8s/database/postgresql-pvc.yaml k8s/monitoring/prometheus-pvc.yaml k8s/monitoring/grafana-pvc.yaml; do
+    sed "s/storageClassName: .*/storageClassName: $STORAGE_CLASS/" "$pvc_file" > "$TMP_DIR/$(basename $pvc_file)"
+done
+
+# Process Airflow values.yaml with correct storage class
+sed "s/storageClassName: .*/storageClassName: $STORAGE_CLASS/" k8s/airflow/values.yaml > "$TMP_DIR/values.yaml"
+
 echo "Step 1: Creating namespaces..."
 kubectl apply -f k8s/namespaces.yaml
 
 echo ""
 echo "Step 2: Deploying PostgreSQL..."
 kubectl apply -f k8s/database/postgresql-secret.yaml
-kubectl apply -f k8s/database/postgresql-pvc.yaml
+kubectl apply -f "$TMP_DIR/postgresql-pvc.yaml"
 kubectl apply -f k8s/database/postgresql-deployment.yaml
 kubectl apply -f k8s/database/postgresql-service.yaml
 
@@ -23,7 +50,7 @@ kubectl wait --for=condition=ready pod -l app=postgresql -n database --timeout=3
 echo ""
 echo "Step 3: Deploying Prometheus and StatsD Exporter..."
 kubectl apply -f k8s/monitoring/prometheus-rbac.yaml
-kubectl apply -f k8s/monitoring/prometheus-pvc.yaml
+kubectl apply -f "$TMP_DIR/prometheus-pvc.yaml"
 kubectl apply -f k8s/monitoring/prometheus-config.yaml
 kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
 kubectl apply -f k8s/monitoring/prometheus-service.yaml
@@ -40,12 +67,16 @@ kubectl wait --for=condition=ready pod -l app=statsd-exporter -n monitoring --ti
 
 echo ""
 echo "Step 4: Deploying Grafana..."
-kubectl apply -f k8s/monitoring/grafana-pvc.yaml
+kubectl apply -f "$TMP_DIR/grafana-pvc.yaml"
 kubectl apply -f k8s/monitoring/grafana-datasources.yaml
 kubectl apply -f k8s/monitoring/grafana-dashboards-config.yaml
 kubectl apply -f k8s/monitoring/grafana-airflow-dashboard.yaml
 kubectl apply -f k8s/monitoring/grafana-airflow-db-dashboard.yaml
 kubectl apply -f k8s/monitoring/grafana-airflow-status-dashboard.yaml
+kubectl apply -f k8s/monitoring/grafana-airflow-task-performance-dashboard.yaml
+kubectl apply -f k8s/monitoring/grafana-airflow-resource-pool-dashboard.yaml
+kubectl apply -f k8s/monitoring/grafana-airflow-error-debug-dashboard.yaml
+kubectl apply -f k8s/monitoring/grafana-airflow-dependencies-dashboard.yaml
 kubectl apply -f k8s/monitoring/grafana-deployment.yaml
 kubectl apply -f k8s/monitoring/grafana-service.yaml
 
@@ -59,9 +90,9 @@ helm repo update
 
 echo ""
 echo "Step 6: Installing Airflow 3.x with Example DAGs..."
-helm install airflow apache-airflow/airflow \
+helm upgrade --install airflow apache-airflow/airflow \
   --namespace airflow \
-  --values k8s/airflow/values.yaml \
+  --values "$TMP_DIR/values.yaml" \
   --version 1.18.0 \
   --timeout 10m
 
