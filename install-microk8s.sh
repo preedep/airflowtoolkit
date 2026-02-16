@@ -22,6 +22,87 @@ fi
 echo "✅ Detected Ubuntu $VERSION"
 echo ""
 
+# ==============================
+# Step 0: Prepare data disk for /var/snap (recommended for microk8s)
+# ==============================
+DATA_DEV="/dev/sdb1"
+MOUNT_POINT="/var/snap"
+
+echo "Step 0: Preparing data disk for ${MOUNT_POINT} (${DATA_DEV})..."
+
+# Check if device exists
+if [ -b "$DATA_DEV" ]; then
+    echo "✅ Found data disk: $DATA_DEV"
+    
+    # Get UUID (empty if no filesystem)
+    DATA_UUID="$(sudo blkid -s UUID -o value "$DATA_DEV" 2>/dev/null || true)"
+    DATA_FSTYPE="$(sudo blkid -s TYPE -o value "$DATA_DEV" 2>/dev/null || true)"
+    
+    # If no filesystem, format it
+    if [ -z "$DATA_FSTYPE" ]; then
+        echo "⚠️  No filesystem on $DATA_DEV. Formatting as ext4..."
+        read -p "This will erase all data on $DATA_DEV. Continue? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Skipping disk formatting. Continuing without mounting $DATA_DEV..."
+        else
+            sudo mkfs.ext4 -F "$DATA_DEV"
+            DATA_UUID="$(sudo blkid -s UUID -o value "$DATA_DEV")"
+            DATA_FSTYPE="ext4"
+        fi
+    fi
+    
+    # If we have a filesystem, proceed with mounting
+    if [ -n "$DATA_FSTYPE" ]; then
+        # Stop snapd to avoid /var/snap being busy
+        echo "Stopping snapd temporarily..."
+        sudo systemctl stop snapd.service 2>/dev/null || true
+        sudo systemctl stop snapd.socket 2>/dev/null || true
+        
+        # Ensure mount point exists
+        sudo mkdir -p "$MOUNT_POINT"
+        
+        # If /var/snap is not a mountpoint, back it up and clean it
+        if ! mountpoint -q "$MOUNT_POINT"; then
+            if [ -d "$MOUNT_POINT" ] && [ "$(ls -A $MOUNT_POINT)" ]; then
+                echo "Backing up existing ${MOUNT_POINT} contents..."
+                sudo mv "$MOUNT_POINT" "${MOUNT_POINT}.backup.$(date +%Y%m%d_%H%M%S)"
+                sudo mkdir -p "$MOUNT_POINT"
+            fi
+        fi
+        
+        # Update /etc/fstab entry (idempotent)
+        FSTAB_LINE="UUID=${DATA_UUID} ${MOUNT_POINT} ext4 defaults,nofail 0 2"
+        echo "Ensuring /etc/fstab has: $FSTAB_LINE"
+        
+        # Remove any previous /var/snap entries, then append the correct one
+        sudo sed -i '\|[[:space:]]/var/snap[[:space:]]|d' /etc/fstab
+        echo "$FSTAB_LINE" | sudo tee -a /etc/fstab >/dev/null
+        
+        # Reload systemd and mount
+        sudo systemctl daemon-reload
+        sudo mount -a
+        
+        # Verify
+        if mountpoint -q "$MOUNT_POINT"; then
+            echo "✅ Mounted ${DATA_DEV} to ${MOUNT_POINT}"
+            df -h | grep -E "(/var/snap|Filesystem)" || true
+        else
+            echo "⚠️  Warning: ${MOUNT_POINT} is not mounted. Continuing anyway..."
+        fi
+        
+        # Start snapd back
+        echo "Starting snapd back..."
+        sudo systemctl start snapd.socket 2>/dev/null || true
+        sudo systemctl start snapd.service 2>/dev/null || true
+    fi
+else
+    echo "⚠️  Data disk $DATA_DEV not found. Skipping disk mount."
+    echo "   MicroK8s will use default storage location."
+fi
+
+echo ""
+
 # Check if microk8s is already installed
 MICROK8S_INSTALLED=false
 if command -v microk8s &> /dev/null; then
