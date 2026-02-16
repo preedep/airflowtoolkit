@@ -116,7 +116,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Total Tasks\" FROM task_instance WHERE start_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(*) as \"Total Tasks\" FROM task_instance WHERE start_date >= $__timeFrom() AND start_date <= $__timeTo();",
               "refId": "A"
             }
           ],
@@ -294,7 +294,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  COUNT(DISTINCT task_id) as \"Task Count\",\n  is_paused as \"Paused\",\n  schedule_interval as \"Schedule\",\n  tags::text as \"Tags\"\nFROM dag d\nLEFT JOIN (\n  SELECT DISTINCT dag_id, task_id \n  FROM task_instance \n  WHERE start_date > NOW() - INTERVAL '7 days'\n) ti ON d.dag_id = ti.dag_id\nWHERE d.bundle_name IS NOT NULL\nGROUP BY d.dag_id, d.is_paused, d.schedule_interval, d.tags\nORDER BY \"Task Count\" DESC\nLIMIT 20;",
+              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  COUNT(DISTINCT task_id) as \"Task Count\",\n  is_paused as \"Paused\",\n  schedule_interval as \"Schedule\",\n  tags::text as \"Tags\"\nFROM dag d\nLEFT JOIN (\n  SELECT DISTINCT dag_id, task_id \n  FROM task_instance \n  WHERE start_date >= $__timeFrom()\n    AND start_date <= $__timeTo()\n) ti ON d.dag_id = ti.dag_id\nWHERE d.bundle_name IS NOT NULL\nGROUP BY d.dag_id, d.is_paused, d.schedule_interval, d.tags\nORDER BY \"Task Count\" DESC\nLIMIT 20;",
               "refId": "A"
             }
           ],
@@ -364,7 +364,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  operator as \"Operator Type\",\n  COUNT(*) as \"Usage Count\"\nFROM task_instance \nWHERE start_date > NOW() - INTERVAL '7 days'\n  AND operator IS NOT NULL\nGROUP BY operator\nORDER BY \"Usage Count\" DESC\nLIMIT 15;",
+              "rawSql": "SELECT \n  operator as \"Operator Type\",\n  COUNT(*) as \"Usage Count\"\nFROM task_instance \nWHERE start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\n  AND operator IS NOT NULL\nGROUP BY operator\nORDER BY \"Usage Count\" DESC\nLIMIT 15;",
               "refId": "A"
             }
           ],
@@ -531,7 +531,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "time_series",
-              "rawSql": "SELECT \n  DATE_TRUNC('hour', ae.timestamp) as time,\n  a.uri as metric,\n  COUNT(*) as value\nFROM asset_event ae\nJOIN asset a ON ae.asset_id = a.id\nWHERE ae.timestamp > NOW() - INTERVAL '7 days'\nGROUP BY DATE_TRUNC('hour', ae.timestamp), a.uri\nORDER BY time;",
+              "rawSql": "SELECT \n  DATE_TRUNC('hour', ae.timestamp) as time,\n  a.uri as metric,\n  COUNT(*) as value\nFROM asset_event ae\nJOIN asset a ON ae.asset_id = a.id\nWHERE ae.timestamp >= $__timeFrom()\n  AND ae.timestamp <= $__timeTo()\nGROUP BY DATE_TRUNC('hour', ae.timestamp), a.uri\nORDER BY time;",
               "refId": "A"
             }
           ],
@@ -650,7 +650,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  task_id as \"Task ID\",\n  operator as \"Operator\",\n  COUNT(*) as \"Execution Count\",\n  COUNT(CASE WHEN state = 'success' THEN 1 END) as \"Success\",\n  COUNT(CASE WHEN state = 'failed' THEN 1 END) as \"Failed\",\n  ROUND(AVG(EXTRACT(EPOCH FROM (end_date - start_date)))::numeric, 2) as \"Avg Duration (s)\"\nFROM task_instance \nWHERE start_date > NOW() - INTERVAL '7 days'\n  AND end_date IS NOT NULL\nGROUP BY dag_id, task_id, operator\nORDER BY \"Execution Count\" DESC\nLIMIT 50;",
+              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  task_id as \"Task ID\",\n  operator as \"Operator\",\n  COUNT(*) as \"Execution Count\",\n  COUNT(CASE WHEN state = 'success' THEN 1 END) as \"Success\",\n  COUNT(CASE WHEN state = 'failed' THEN 1 END) as \"Failed\",\n  ROUND(AVG(EXTRACT(EPOCH FROM (end_date - start_date)))::numeric, 2) as \"Avg Duration (s)\"\nFROM task_instance \nWHERE start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\n  AND end_date IS NOT NULL\nGROUP BY dag_id, task_id, operator\nORDER BY \"Execution Count\" DESC\nLIMIT 50;",
               "refId": "A"
             }
           ],
@@ -701,7 +701,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  a.uri as \"Asset URI\",\n  a.name as \"Asset Name\",\n  COUNT(ae.id) as \"Event Count\",\n  MAX(ae.timestamp) as \"Last Updated\"\nFROM asset a\nLEFT JOIN asset_event ae ON a.id = ae.asset_id\nWHERE ae.timestamp > NOW() - INTERVAL '7 days' OR ae.timestamp IS NULL\nGROUP BY a.uri, a.name\nORDER BY \"Event Count\" DESC NULLS LAST\nLIMIT 30;",
+              "rawSql": "SELECT \n  a.uri as \"Asset URI\",\n  a.name as \"Asset Name\",\n  COUNT(ae.id) as \"Event Count\",\n  MAX(ae.timestamp) as \"Last Updated\"\nFROM asset a\nLEFT JOIN asset_event ae ON a.id = ae.asset_id\nWHERE (ae.timestamp >= $__timeFrom() AND ae.timestamp <= $__timeTo()) OR ae.timestamp IS NULL\nGROUP BY a.uri, a.name\nORDER BY \"Event Count\" DESC NULLS LAST\nLIMIT 30;",
               "refId": "A"
             }
           ],

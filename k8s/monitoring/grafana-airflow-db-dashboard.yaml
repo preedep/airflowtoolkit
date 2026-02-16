@@ -290,7 +290,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(DISTINCT dag_id) as \"Success DAGs\" FROM dag_run WHERE state = 'success' AND start_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(DISTINCT dag_id) as \"Success DAGs\" FROM dag_run WHERE state = 'success' AND start_date >= $__timeFrom() AND start_date <= $__timeTo();",
               "refId": "A"
             }
           ],
@@ -344,7 +344,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(DISTINCT dag_id) as \"Failed DAGs\" FROM dag_run WHERE state = 'failed' AND start_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(DISTINCT dag_id) as \"Failed DAGs\" FROM dag_run WHERE state = 'failed' AND start_date >= $__timeFrom() AND start_date <= $__timeTo();",
               "refId": "A"
             }
           ],
@@ -452,7 +452,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Total Tasks\" FROM task_instance WHERE start_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(*) as \"Total Tasks\" FROM task_instance WHERE start_date >= $__timeFrom() AND start_date <= $__timeTo();",
               "refId": "A"
             }
           ],
@@ -614,7 +614,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Success Tasks\" FROM task_instance WHERE state = 'success' AND start_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(*) as \"Success Tasks\" FROM task_instance WHERE state = 'success' AND start_date >= $__timeFrom() AND start_date <= $__timeTo();",
               "refId": "A"
             }
           ],
@@ -668,7 +668,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT COUNT(*) as \"Failed Tasks\" FROM task_instance WHERE state = 'failed' AND start_date > NOW() - INTERVAL '24 hours';",
+              "rawSql": "SELECT COUNT(*) as \"Failed Tasks\" FROM task_instance WHERE state = 'failed' AND start_date >= $__timeFrom() AND start_date <= $__timeTo();",
               "refId": "A"
             }
           ],
@@ -800,7 +800,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  run_id as \"Run ID\",\n  state as \"State\",\n  logical_date as \"Logical Date\",\n  start_date as \"Start Date\",\n  end_date as \"End Date\",\n  EXTRACT(EPOCH FROM (COALESCE(end_date, NOW()) - start_date)) as \"Duration (s)\"\nFROM dag_run \nWHERE start_date > NOW() - INTERVAL '24 hours'\nORDER BY start_date DESC\nLIMIT 100;",
+              "rawSql": "SELECT \n  dag_id as \"DAG ID\",\n  run_id as \"Run ID\",\n  state as \"State\",\n  logical_date as \"Logical Date\",\n  start_date as \"Start Date\",\n  end_date as \"End Date\",\n  EXTRACT(EPOCH FROM (COALESCE(end_date, NOW()) - start_date)) as \"Duration (s)\"\nFROM dag_run \nWHERE start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\nORDER BY start_date DESC\nLIMIT 100;",
               "refId": "A"
             }
           ],

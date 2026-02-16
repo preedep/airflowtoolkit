@@ -895,27 +895,36 @@ LIMIT 50;
 #### ❌ Error Statistics
 
 ```sql
--- Failed Tasks (24h)
+-- Failed Tasks (ใช้ Grafana time range)
 SELECT COUNT(*) as "Failed Tasks" 
 FROM task_instance 
 WHERE state = 'failed' 
-  AND start_date > NOW() - INTERVAL '24 hours';
+  AND start_date >= $__timeFrom()
+  AND start_date <= $__timeTo();
 
--- Failed DAG Runs (24h)
+-- Failed DAG Runs (ใช้ Grafana time range)
 SELECT COUNT(*) as "Failed DAG Runs" 
 FROM dag_run 
 WHERE state = 'failed' 
-  AND start_date > NOW() - INTERVAL '24 hours';
+  AND start_date >= $__timeFrom()
+  AND start_date <= $__timeTo();
 
--- Import Errors
+-- Import Errors (ไม่มี time filter - แสดงทั้งหมด)
 SELECT COUNT(*) as "Import Errors" FROM import_error;
 
--- Upstream Failed Tasks (24h)
+-- Upstream Failed Tasks (ใช้ Grafana time range)
 SELECT COUNT(*) as "Upstream Failed" 
 FROM task_instance 
 WHERE state = 'upstream_failed' 
-  AND start_date > NOW() - INTERVAL '24 hours';
+  AND start_date >= $__timeFrom()
+  AND start_date <= $__timeTo();
 ```
+
+**การใช้ Grafana Time Range Variables**:
+- **`$__timeFrom()`**: เวลาเริ่มต้นที่ผู้ใช้เลือกจาก Grafana UI
+- **`$__timeTo()`**: เวลาสิ้นสุดที่ผู้ใช้เลือกจาก Grafana UI
+- **ข้อดี**: Flexible - ผู้ใช้สามารถเลือก time range ได้เอง (Last 24h, Last 7 days, Custom range)
+- **Default time range**: Dashboard ตั้งค่าเริ่มต้นเป็น "Last 24 hours"
 
 **คำอธิบายแต่ละ Metric**:
 

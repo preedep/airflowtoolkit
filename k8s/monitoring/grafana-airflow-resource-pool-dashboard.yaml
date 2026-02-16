@@ -435,7 +435,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "time_series",
-              "rawSql": "SELECT \n  DATE_TRUNC('hour', start_date) as time,\n  pool,\n  COUNT(*) as value\nFROM task_instance \nWHERE start_date > NOW() - INTERVAL '7 days'\n  AND pool IS NOT NULL\nGROUP BY DATE_TRUNC('hour', start_date), pool\nORDER BY time;",
+              "rawSql": "SELECT \n  DATE_TRUNC('hour', start_date) as time,\n  pool,\n  COUNT(*) as value\nFROM task_instance \nWHERE start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\n  AND pool IS NOT NULL\nGROUP BY DATE_TRUNC('hour', start_date), pool\nORDER BY time;",
               "refId": "A"
             }
           ],
@@ -482,7 +482,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  COALESCE(pool, 'default_pool') as metric,\n  COUNT(*) as value\nFROM task_instance \nWHERE start_date > NOW() - INTERVAL '24 hours'\nGROUP BY pool\nORDER BY value DESC;",
+              "rawSql": "SELECT \n  COALESCE(pool, 'default_pool') as metric,\n  COUNT(*) as value\nFROM task_instance \nWHERE start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\nGROUP BY pool\nORDER BY value DESC;",
               "refId": "A"
             }
           ],
@@ -644,7 +644,7 @@ data:
             {
               "datasource": "Airflow PostgreSQL",
               "format": "table",
-              "rawSql": "SELECT \n  COALESCE(pool, 'default_pool') as \"Pool\",\n  COUNT(*) as \"Task Count\"\nFROM task_instance \nWHERE start_date > NOW() - INTERVAL '7 days'\nGROUP BY pool\nORDER BY \"Task Count\" DESC\nLIMIT 10;",
+              "rawSql": "SELECT \n  COALESCE(pool, 'default_pool') as \"Pool\",\n  COUNT(*) as \"Task Count\"\nFROM task_instance \nWHERE start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\nGROUP BY pool\nORDER BY \"Task Count\" DESC\nLIMIT 10;",
               "refId": "A"
             }
           ],
