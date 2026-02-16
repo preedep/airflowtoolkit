@@ -34,8 +34,15 @@ spec:
           mountPath: /etc/grafana/provisioning/datasources
         - name: grafana-dashboards-config
           mountPath: /etc/grafana/provisioning/dashboards
-        - name: grafana-dashboards
-          mountPath: /var/lib/grafana/dashboards
+        - name: grafana-dashboard-metrics
+          mountPath: /var/lib/grafana/dashboards/airflow-metrics.json
+          subPath: airflow-dashboard.json
+        - name: grafana-dashboard-dags
+          mountPath: /var/lib/grafana/dashboards/airflow-dags.json
+          subPath: airflow-db-dashboard.json
+        - name: grafana-dashboard-status
+          mountPath: /var/lib/grafana/dashboards/airflow-status.json
+          subPath: airflow-status-dashboard.json
         resources:
           requests:
             memory: "256Mi"
@@ -65,6 +72,12 @@ spec:
       - name: grafana-dashboards-config
         configMap:
           name: grafana-dashboards-config
-      - name: grafana-dashboards
+      - name: grafana-dashboard-metrics
         configMap:
           name: grafana-airflow-dashboard
+      - name: grafana-dashboard-dags
+        configMap:
+          name: grafana-airflow-db-dashboard
+      - name: grafana-dashboard-status
+        configMap:
+          name: grafana-airflow-status-dashboard

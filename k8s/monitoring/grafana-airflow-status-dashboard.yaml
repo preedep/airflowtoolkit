@@ -1,0 +1,154 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-airflow-status-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  airflow-status-dashboard.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "center",
+                "displayMode": "color-background",
+                "cellOptions": {
+                  "type": "auto"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "light-gray",
+                    "value": null
+                  },
+                  {
+                    "color": "light-gray",
+                    "value": 0
+                  },
+                  {
+                    "color": "dark-gray",
+                    "value": 1
+                  },
+                  {
+                    "color": "green",
+                    "value": 2
+                  },
+                  {
+                    "color": "red",
+                    "value": 3
+                  },
+                  {
+                    "color": "blue",
+                    "value": 4
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 5
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "DAG"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 200
+                  },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-background"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Status"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 100
+                  },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-background"
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 30,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            },
+            "sortBy": [
+              {
+                "desc": false,
+                "displayName": "DAG"
+              }
+            ]
+          },
+          "pluginVersion": "9.0.0",
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "\nWITH dag_status AS (\n  SELECT \n    d.dag_id,\n    d.is_paused,\n    dr.state as latest_state,\n    dr.start_date as latest_start\n  FROM dag d\n  LEFT JOIN LATERAL (\n    SELECT state, start_date\n    FROM dag_run\n    WHERE dag_run.dag_id = d.dag_id\n    ORDER BY start_date DESC\n    LIMIT 1\n  ) dr ON true\n  WHERE d.bundle_name IS NOT NULL\n)\nSELECT \n  SUBSTRING(dag_id, 1, 30) as \"DAG\",\n  CASE \n    WHEN latest_state = 'running' THEN 2\n    WHEN latest_state = 'failed' THEN 3\n    WHEN latest_state = 'success' THEN 4\n    WHEN is_paused = true THEN 1\n    WHEN latest_start IS NOT NULL THEN 5\n    ELSE 0\n  END as \"Status\",\n  CASE \n    WHEN latest_state = 'running' THEN 'Running'\n    WHEN latest_state = 'failed' THEN 'Failed'\n    WHEN latest_state = 'success' THEN 'Success'\n    WHEN is_paused = true THEN 'Paused'\n    WHEN latest_start IS NOT NULL THEN 'Idle'\n    ELSE 'Never Run'\n  END as \"State\"\nFROM dag_status\nORDER BY dag_id;\n                ",
+              "refId": "A"
+            }
+          ],
+          "title": "All DAGs Status (Dynamic)",
+          "type": "table"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 27,
+      "style": "dark",
+      "tags": [
+        "airflow",
+        "status",
+        "grid"
+      ],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Airflow DAGs Status Grid",
+      "uid": "airflow-dags-status-grid",
+      "version": 1
+    }
