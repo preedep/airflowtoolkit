@@ -85,14 +85,18 @@ Script จะทำการติดตั้งทุกอย่างโด�
 | **Grafana** | http://localhost:30030 | admin | admin |
 | **Prometheus** | http://localhost:30090 | - | - |
 
-### 📊 Grafana Dashboard
+### 📊 Grafana Dashboards
 
-Dashboard แสดง metrics สำคัญของ Airflow:
-- **Scheduler Heartbeat** - ตรวจสอบสถานะ scheduler
-- **Executor Slots** - จำนวน slots ว่างและใช้งาน
-- **Task Queue** - tasks ที่รออยู่และกำลังทำงาน
-- **DAG Processing Time** - เวลาที่ใช้ในการ parse DAGs
-- **Task Success/Failure Rate** - อัตราความสำเร็จและล้มเหลวแยกตาม DAG
+ระบบมี **7 Dashboards** สำหรับ monitoring Airflow จากมุมมองต่างๆ:
+- **Airflow Metrics** - Real-time metrics จาก Prometheus
+- **Airflow DAGs** - ภาพรวมสถานะ DAGs และ Tasks
+- **Airflow DAGs Status Grid** - แสดงสถานะ DAGs แบบ grid layout
+- **Airflow Task Performance** - วิเคราะห์ performance, retry rate, queue time
+- **Airflow Resource & Pool** - ติดตาม pool usage และ slot allocation
+- **Airflow Error & Debugging** - ติดตาม errors และ failures
+- **Airflow DAG Dependencies & Lineage** - ติดตาม dependencies และ asset relationships
+
+📖 **[ดูรายละเอียดทั้งหมดและ SQL queries ใน GRAFANA_DASHBOARDS.md](GRAFANA_DASHBOARDS.md)**
 
 ### 📁 โครงสร้างโปรเจค
 
@@ -194,6 +198,7 @@ kubectl delete -f k8s/namespaces.yaml
 
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - คู่มือการติดตั้งแบบละเอียด พร้อมคำอธิบายแต่ละขั้นตอน
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - คู่มือแก้ไขปัญหาที่พบบ่อย พร้อมวิธีแก้ไข
+- **[GRAFANA_DASHBOARDS.md](GRAFANA_DASHBOARDS.md)** - คู่มือ Grafana Dashboards ทั้ง 7 อัน พร้อม SQL queries
 
 ### ⚠️ หมายเหตุ
 
@@ -293,14 +298,18 @@ After successful deployment, access the services at:
 | **Grafana** | http://localhost:30030 | admin | admin |
 | **Prometheus** | http://localhost:30090 | - | - |
 
-### 📊 Grafana Dashboard
+### 📊 Grafana Dashboards
 
-Pre-configured dashboard showing key Airflow metrics:
-- **Scheduler Heartbeat** - Monitor scheduler health
-- **Executor Slots** - Available and used slots
-- **Task Queue** - Queued and running tasks
-- **DAG Processing Time** - Time spent parsing DAGs
-- **Task Success/Failure Rate** - Success and failure rates by DAG
+The system includes **7 Dashboards** for monitoring Airflow from different perspectives:
+- **Airflow Metrics** - Real-time metrics from Prometheus
+- **Airflow DAGs** - Overview of DAG and Task status
+- **Airflow DAGs Status Grid** - DAG status in grid layout
+- **Airflow Task Performance** - Analyze performance, retry rate, queue time
+- **Airflow Resource & Pool** - Monitor pool usage and slot allocation
+- **Airflow Error & Debugging** - Track errors and failures
+- **Airflow DAG Dependencies & Lineage** - Monitor dependencies and asset relationships
+
+📖 **[See full details and SQL queries in GRAFANA_DASHBOARDS.md](GRAFANA_DASHBOARDS.md)**
 
 ### 📁 Project Structure
 
@@ -402,6 +411,7 @@ kubectl delete -f k8s/namespaces.yaml
 
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - Detailed deployment guide with step-by-step instructions
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[GRAFANA_DASHBOARDS.md](GRAFANA_DASHBOARDS.md)** - Complete guide to all 7 Grafana Dashboards with SQL queries
 
 ### ⚠️ Important Notes
 
