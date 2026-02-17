@@ -58,6 +58,9 @@ spec:
         - name: grafana-dashboard-dag-tasks
           mountPath: /var/lib/grafana/dashboards/airflow-dag-tasks.json
           subPath: airflow-dag-tasks-dashboard.json
+        - name: grafana-dashboard-job-flow
+          mountPath: /var/lib/grafana/dashboards/airflow-job-flow.json
+          subPath: airflow-job-flow-dashboard.json
         resources:
           requests:
             memory: "256Mi"
@@ -111,3 +114,6 @@ spec:
       - name: grafana-dashboard-dag-tasks
         configMap:
           name: grafana-airflow-dag-tasks-dashboard
+      - name: grafana-dashboard-job-flow
+        configMap:
+          name: grafana-airflow-job-flow-dashboard
