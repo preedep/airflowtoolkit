@@ -101,6 +101,7 @@ kubectl apply -f "$TMP_DIR/grafana-airflow-resource-pool-dashboard.yaml"
 kubectl apply -f "$TMP_DIR/grafana-airflow-error-debug-dashboard.yaml"
 kubectl apply -f "$TMP_DIR/grafana-airflow-dependencies-dashboard.yaml"
 kubectl apply -f "$TMP_DIR/grafana-airflow-dag-tasks-dashboard.yaml"
+kubectl apply -f "$TMP_DIR/grafana-airflow-job-flow-dashboard.yaml"
 kubectl apply -f k8s/monitoring/grafana-deployment.yaml
 kubectl apply -f k8s/monitoring/grafana-service.yaml
 
