@@ -8,7 +8,7 @@
 
 ### 📊 ภาพรวม Grafana Dashboards
 
-ระบบมี **7 Dashboards** สำหรับ monitoring Airflow จากมุมมองต่างๆ โดยใช้ข้อมูลจาก 2 แหล่ง:
+ระบบมี **8 Dashboards** สำหรับ monitoring Airflow จากมุมมองต่างๆ โดยใช้ข้อมูลจาก 2 แหล่ง:
 - **Prometheus Metrics** - Real-time metrics จาก StatsD Exporter สำหรับติดตามประสิทธิภาพแบบ real-time
 - **PostgreSQL Database** - ข้อมูลจาก Airflow metadata database (Airflow 3.x schema) สำหรับวิเคราะห์เชิงลึกและ historical data
 
@@ -1457,6 +1457,253 @@ LIMIT 30;
 
 ---
 
+### 8️⃣ Airflow DAG Tasks Explorer
+
+**วัตถุประสงค์**: Dashboard แบบ interactive สำหรับ drill-down และ explore tasks ภายใน DAG ที่เลือก เพื่อวิเคราะห์ task-level performance และ troubleshooting
+
+**Data Source**: Airflow PostgreSQL
+
+**เหตุผลในการใช้ Dashboard นี้**:
+- **Drill-down analysis**: Focus ที่ tasks ของ DAG เดียวโดยเฉพาะ
+- **Task-level troubleshooting**: Debug ปัญหาของ tasks แต่ละตัวอย่างละเอียด
+- **Performance analysis**: วิเคราะห์ performance ของแต่ละ task ใน DAG
+- **Interactive filtering**: ใช้ variable `$dag_id` เลือก DAG ที่ต้องการดู
+
+**Key Feature: Dynamic DAG Selection**:
+- Dashboard มี **variable `$dag_id`** ที่ query จาก database
+- ผู้ใช้เลือก DAG จาก dropdown ได้เอง
+- ทุก panels จะ filter ข้อมูลตาม DAG ที่เลือกอัตโนมัติ
+
+**Panels และ SQL Queries**:
+
+#### 📋 Tasks for DAG: $dag_id (Main Table)
+
+```sql
+SELECT 
+  ti.task_id as "Task ID",
+  ti.run_id as "Run ID",
+  ti.state as "State",
+  ti.start_date as "Start Date",
+  ti.end_date as "End Date",
+  EXTRACT(EPOCH FROM (COALESCE(ti.end_date, NOW()) - ti.start_date)) as "Duration (s)",
+  ti.try_number as "Try Number",
+  ti.max_tries as "Max Tries",
+  ti.operator as "Operator",
+  ti.pool as "Pool",
+  ti.priority_weight as "Priority"
+FROM task_instance ti
+WHERE ti.dag_id = '$dag_id'
+  AND ti.start_date >= $__timeFrom()
+  AND ti.start_date <= $__timeTo()
+ORDER BY ti.start_date DESC
+LIMIT 100;
+```
+
+**คำอธิบายแต่ละ Column**:
+
+1. **`task_id`**: Unique identifier ของ task ภายใน DAG
+   - **เหตุผล**: Primary identifier สำหรับแต่ละ task
+   - **ความสำคัญ**: ใช้ในการ reference และ drill-down
+   - **Feature**: มี link ไปยัง Airflow UI สำหรับ task นั้นๆ
+
+2. **`run_id`**: Unique identifier ของ DAG run
+   - **เหตุผล**: บอกว่า task นี้อยู่ใน run ไหน
+   - **ความสำคัญ**: ใช้ในการ correlate tasks ใน run เดียวกัน
+
+3. **`state`**: สถานะของ task (success, failed, running, queued, up_for_retry)
+   - **เหตุผล**: บอกผลลัพธ์ของ task execution
+   - **ความสำคัญ**: **Primary indicator** ของ task health
+   - **Visualization**: แสดงเป็น color-background (เขียว=success, แดง=failed, น้ำเงิน=running, เหลือง=queued, ส้ม=up_for_retry)
+
+4. **`start_date`**: เวลาที่ task เริ่มทำงาน
+   - **เหตุผล**: Actual execution start time
+   - **ความสำคัญ**: ใช้คำนวณ duration และ timeline analysis
+
+5. **`end_date`**: เวลาที่ task จบการทำงาน
+   - **เหตุผล**: Actual execution end time
+   - **ความสำคัญ**: ใช้คำนวณ duration
+
+6. **`Duration (s)`**: ระยะเวลาที่ task ใช้ (วินาที)
+   - **Formula**: `EXTRACT(EPOCH FROM (COALESCE(end_date, NOW()) - start_date))`
+   - **`COALESCE(end_date, NOW())`**: ถ้า task ยังไม่จบ ใช้เวลาปัจจุบัน
+   - **ความสำคัญ**: **Performance metric** - identify slow tasks
+   - **Visualization**: แสดงเป็น gradient gauge (เขียว < 60s, เหลือง 60-300s, แดง > 300s)
+
+7. **`try_number`**: จำนวนครั้งที่ task ถูก execute
+   - **เหตุผล**: บอกว่า task retry กี่ครั้ง (1 = ครั้งแรก, 2 = retry 1 ครั้ง)
+   - **ความสำคัญ**: **Reliability indicator** - try_number สูง = มีปัญหา
+
+8. **`max_tries`**: จำนวนครั้งสูงสุดที่ task สามารถ retry ได้
+   - **เหตุผล**: Configuration reference
+   - **ความสำคัญ**: เปรียบเทียบกับ try_number เพื่อดูว่าใกล้ถึง limit หรือยัง
+
+9. **`operator`**: ชื่อ operator class ที่ task ใช้
+   - **เหตุผล**: บอกว่า task ใช้ technology อะไร (PythonOperator, BashOperator, etc.)
+   - **ความสำคัญ**: **Technical context** - ช่วยในการ troubleshooting
+
+10. **`pool`**: Pool ที่ task ใช้
+    - **เหตุผล**: บอกว่า task ใช้ resource pool ไหน
+    - **ความสำคัญ**: **Resource allocation context** - เข้าใจ resource constraints
+
+11. **`priority_weight`**: ค่า priority ของ task
+    - **เหตุผล**: บอกว่า task นี้มี priority เท่าไหร่ในการ schedule
+    - **ความสำคัญ**: **Scheduling context** - เข้าใจ execution order
+
+**Table Features**:
+- **Sorting**: Default เรียงตาม Start Date (ล่าสุดก่อน)
+- **Color coding**: State column แสดงสีตามสถานะ
+- **Gradient gauge**: Duration column แสดง gradient ตาม threshold
+- **Deep links**: Task ID มี link ไปยัง Airflow UI
+
+#### 📊 Statistics Panels
+
+**1. Total Tasks**
+```sql
+SELECT COUNT(*) as "Total Tasks" 
+FROM task_instance 
+WHERE dag_id = '$dag_id' 
+  AND start_date >= $__timeFrom() 
+  AND start_date <= $__timeTo();
+```
+
+**คำอธิบาย**:
+- **เหตุผล**: นับจำนวน task executions ทั้งหมดของ DAG ที่เลือก
+- **ความสำคัญ**: **Workload metric** - บอกว่า DAG นี้มี task executions เท่าไหร่
+
+**2. Success Tasks**
+```sql
+SELECT COUNT(*) as "Success Tasks" 
+FROM task_instance 
+WHERE dag_id = '$dag_id' 
+  AND state = 'success' 
+  AND start_date >= $__timeFrom() 
+  AND start_date <= $__timeTo();
+```
+
+**คำอธิบาย**:
+- **เหตุผล**: นับ tasks ที่ทำงานสำเร็จ
+- **ความสำคัญ**: **Success indicator** - วัด reliability ของ DAG
+- **Visualization**: แสดงเป็น stat panel สีเขียว
+
+**3. Failed Tasks**
+```sql
+SELECT COUNT(*) as "Failed Tasks" 
+FROM task_instance 
+WHERE dag_id = '$dag_id' 
+  AND state = 'failed' 
+  AND start_date >= $__timeFrom() 
+  AND start_date <= $__timeTo();
+```
+
+**คำอธิบาย**:
+- **เหตุผล**: นับ tasks ที่ล้มเหลว
+- **ความสำคัญ**: **Failure indicator** - ต้อง investigate ถ้ามีค่าสูง
+- **Visualization**: แสดงเป็น stat panel สีแดง
+
+**4. Avg Task Duration**
+```sql
+SELECT ROUND(AVG(EXTRACT(EPOCH FROM (end_date - start_date)))::numeric, 2) as "Avg Duration" 
+FROM task_instance 
+WHERE dag_id = '$dag_id' 
+  AND state = 'success' 
+  AND start_date >= $__timeFrom() 
+  AND start_date <= $__timeTo() 
+  AND end_date IS NOT NULL;
+```
+
+**คำอธิบาย**:
+- **เหตุผล**: คำนวณเวลาเฉลี่ยที่ tasks ใช้ในการทำงาน
+- **`ROUND(..., 2)`**: ปัดเป็น 2 ทศนิยม
+- **`WHERE state = 'success'`**: นับเฉพาะ success tasks เพื่อได้ baseline ที่แท้จริง
+- **ความสำคัญ**: **Performance baseline** - ใช้เป็น reference สำหรับ SLA
+- **Visualization**: แสดงเป็น stat panel สีน้ำเงิน พร้อม unit "s" (seconds)
+
+#### 🎯 Variables Configuration
+
+**1. Variable: `$dag_id`**
+- **Type**: Query variable
+- **Query**: `SELECT dag_id FROM dag WHERE bundle_name IS NOT NULL ORDER BY dag_id`
+- **เหตุผล**: Query DAG IDs จาก database แบบ dynamic
+- **Refresh**: On dashboard load
+- **ความสำคัญ**: **Core feature** - ทำให้ dashboard เป็น interactive
+
+**2. Variable: `$airflow_url`**
+- **Type**: Textbox variable
+- **Default**: `http://localhost:30080`
+- **เหตุผล**: ใช้สำหรับสร้าง deep links ไปยัง Airflow UI
+- **ความสำคัญ**: **UX enhancement** - click-through navigation
+
+#### 🔄 Workflow
+
+**การใช้งาน Dashboard**:
+1. เปิด dashboard "Airflow DAG Tasks Explorer"
+2. เลือก DAG จาก dropdown `$dag_id` ด้านบน
+3. เลือก time range ที่ต้องการ (Last 24h, 7d, etc.)
+4. ดู statistics panels เพื่อเห็นภาพรวม
+5. ดู main table เพื่อเห็น task-level details
+6. Click ที่ Task ID เพื่อ drill-down ไปยัง Airflow UI
+
+**Use Cases**:
+
+1. **Troubleshooting Failed Tasks**:
+   - เลือก DAG ที่มีปัญหา
+   - ดู Failed Tasks count
+   - Filter table โดย State = 'failed'
+   - ดู Try Number เพื่อเห็น retry pattern
+   - Click Task ID เพื่อดู logs ใน Airflow UI
+
+2. **Performance Analysis**:
+   - เลือก DAG ที่ต้องการวิเคราะห์
+   - ดู Avg Task Duration
+   - Sort table ตาม Duration (s) จากมากไปน้อย
+   - Identify slow tasks ที่ต้อง optimize
+
+3. **Retry Pattern Investigation**:
+   - ดู tasks ที่มี Try Number > 1
+   - วิเคราะห์ว่า tasks ไหน retry บ่อย
+   - Check Operator และ Pool เพื่อหา pattern
+
+4. **Resource Utilization**:
+   - ดู Pool column เพื่อเห็น resource allocation
+   - ดู Priority Weight เพื่อเข้าใจ scheduling order
+   - วิเคราะห์ว่า tasks ใช้ pools อย่างมีประสิทธิภาพหรือไม่
+
+**Business Value**:
+- **Focused analysis**: ดู tasks ของ DAG เดียวโดยเฉพาะ ไม่ต้องกรองข้อมูลจาก dashboards อื่น
+- **Quick troubleshooting**: เห็น task failures และ retries ทันที
+- **Performance insights**: เข้าใจ task-level performance ของแต่ละ DAG
+- **Interactive exploration**: เลือก DAG ได้ตามต้องการ ไม่ต้องสร้าง dashboard ใหม่
+
+**Key Differences จาก Dashboard อื่น**:
+
+| Feature | DAG Tasks Explorer | DAGs Dashboard | Task Performance |
+|---------|-------------------|----------------|------------------|
+| **Scope** | Tasks ของ 1 DAG | ทุก DAGs | ทุก Tasks |
+| **Filtering** | Interactive DAG selection | ไม่มี variable | ไม่มี variable |
+| **Focus** | Task-level details | DAG-level overview | Aggregate performance |
+| **Use Case** | Drill-down analysis | Operational overview | Performance trends |
+| **Granularity** | Individual task instances | DAG runs | Aggregated metrics |
+
+**Best Practices**:
+- ใช้ dashboard นี้เมื่อต้องการ **deep dive** ใน DAG เดียว
+- ใช้ร่วมกับ "Airflow DAGs Dashboard" สำหรับ identify problematic DAGs ก่อน
+- ตั้ง time range ให้เหมาะสม - ใช้ 24h สำหรับ recent issues, 7d สำหรับ trend analysis
+- Sort table ตาม columns ต่างๆ เพื่อหา patterns (เช่น sort ตาม Duration เพื่อหา slow tasks)
+- ใช้ deep links ไปยัง Airflow UI สำหรับดู logs และ detailed information
+- Monitor Try Number เพื่อ identify tasks ที่มี reliability issues
+
+**Limitations**:
+- แสดงได้ครั้งละ 1 DAG (ไม่สามารถเปรียบเทียบหลาย DAGs พร้อมกัน)
+- Limit 100 task instances ต่อ query (ถ้าต้องการดูมากกว่านี้ต้องปรับ time range)
+- ต้องเลือก DAG manually (ไม่ auto-detect problematic DAGs)
+
+**Tips**:
+- ใช้ร่วมกับ "Airflow Error & Debugging Dashboard" เพื่อ identify DAGs ที่มีปัญหาก่อน
+- Bookmark dashboard พร้อม DAG ID สำหรับ DAGs ที่ monitor บ่อยๆ
+- ใช้ Grafana's "Share" feature เพื่อแชร์ view ของ specific DAG กับทีม
+
+---
+
 ### 🎨 Grid Layout Options
 
 #### ปัญหา
@@ -1580,7 +1827,7 @@ WHERE start_date >= $__timeFrom()
 
 ## 🎯 Summary
 
-เอกสารนี้ครอบคลุม **7 Grafana Dashboards** สำหรับ monitoring Apache Airflow 3.x โดยละเอียด:
+เอกสารนี้ครอบคลุม **8 Grafana Dashboards** สำหรับ monitoring Apache Airflow 3.x โดยละเอียด:
 
 1. **Airflow Metrics** - Real-time monitoring จาก Prometheus
 2. **Airflow DAGs** - ภาพรวมสถานะ DAGs และ Tasks
@@ -1589,6 +1836,7 @@ WHERE start_date >= $__timeFrom()
 5. **Airflow Resource & Pool** - ติดตาม resource utilization
 6. **Airflow Error & Debugging** - Monitor errors และ failures
 7. **Airflow DAG Dependencies & Lineage** - ติดตาม dependencies และ data lineage
+8. **Airflow DAG Tasks Explorer** - Interactive drill-down สำหรับ explore tasks ใน DAG ที่เลือก
 
 แต่ละ dashboard มีคำอธิบายละเอียดเกี่ยวกับ:
 - **วัตถุประสงค์**: ใช้ดูอะไร
