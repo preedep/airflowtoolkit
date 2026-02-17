@@ -8,7 +8,7 @@
 
 ### 📊 ภาพรวม Grafana Dashboards
 
-ระบบมี **8 Dashboards** สำหรับ monitoring Airflow จากมุมมองต่างๆ โดยใช้ข้อมูลจาก 2 แหล่ง:
+ระบบมี **9 Dashboards** สำหรับ monitoring Airflow จากมุมมองต่างๆ โดยใช้ข้อมูลจาก 2 แหล่ง:
 - **Prometheus Metrics** - Real-time metrics จาก StatsD Exporter สำหรับติดตามประสิทธิภาพแบบ real-time
 - **PostgreSQL Database** - ข้อมูลจาก Airflow metadata database (Airflow 3.x schema) สำหรับวิเคราะห์เชิงลึกและ historical data
 
@@ -1704,6 +1704,453 @@ WHERE dag_id = '$dag_id'
 
 ---
 
+### 9️⃣ Airflow Job Flow Visualization
+
+**วัตถุประสงค์**: Dashboard สำหรับ visualize job flow, dependency chains, และ detect performance anomalies แบบ Control-M style เพื่อ monitor DAG dependencies และ identify bottlenecks
+
+**Data Source**: Airflow PostgreSQL
+
+**เหตุผลในการใช้ Dashboard นี้**:
+- **Job Flow Monitoring**: เห็น flow ของ DAGs ที่ต่อกันผ่าน asset dependencies (เหมือน Control-M Viewpoint)
+- **Performance Anomaly Detection**: ตรวจจับ DAGs ที่ทำงานช้ากว่าปกติด้วย statistical analysis
+- **Critical Path Analysis**: Identify DAGs ที่มี downstream impact สูง
+- **Dependency Chain Visibility**: เห็น producer → asset → consumer relationships
+
+**Key Features**:
+- **Anomaly Detection**: ใช้ statistical baseline (mean + 2σ) ตรวจจับ performance degradation
+- **Impact Analysis**: แสดง downstream impact ของแต่ละ DAG
+- **Dependency Mapping**: แสดง DAG dependencies ผ่าน assets
+- **Trend Analysis**: Time series ของ DAG duration เพื่อ detect regressions
+
+**Panels และ SQL Queries**:
+
+#### 📊 Statistics Panels
+
+**1. Total DAGs**
+```sql
+SELECT COUNT(DISTINCT dag_id) as "Total DAGs" 
+FROM dag 
+WHERE bundle_name IS NOT NULL;
+```
+
+**2. Running DAGs**
+```sql
+SELECT COUNT(DISTINCT dag_id) as "Running DAGs" 
+FROM dag_run 
+WHERE state = 'running';
+```
+
+**3. DAGs with Dependencies**
+```sql
+SELECT COUNT(DISTINCT dag_id) as "DAGs with Dependencies" 
+FROM dag_schedule_asset_reference;
+```
+
+**4. Total Assets**
+```sql
+SELECT COUNT(DISTINCT id) as "Total Assets" 
+FROM asset;
+```
+
+#### 📋 Job Flow Status (with Performance Anomaly Detection)
+
+**Main Table Query:**
+```sql
+WITH dag_stats AS (
+  SELECT 
+    dag_id,
+    AVG(EXTRACT(EPOCH FROM (end_date - start_date))) as avg_duration,
+    STDDEV(EXTRACT(EPOCH FROM (end_date - start_date))) as stddev_duration
+  FROM dag_run
+  WHERE state = 'success'
+    AND start_date > NOW() - INTERVAL '7 days'
+    AND end_date IS NOT NULL
+  GROUP BY dag_id
+),
+recent_runs AS (
+  SELECT 
+    dr.dag_id,
+    dr.run_id,
+    dr.state,
+    dr.start_date,
+    dr.end_date,
+    EXTRACT(EPOCH FROM (COALESCE(dr.end_date, NOW()) - dr.start_date)) as duration
+  FROM dag_run dr
+  WHERE dr.start_date >= $__timeFrom()
+    AND dr.start_date <= $__timeTo()
+)
+SELECT 
+  r.dag_id as "DAG ID",
+  r.run_id as "Run ID",
+  r.state as "Status",
+  r.start_date as "Start Date",
+  r.end_date as "End Date",
+  ROUND(r.duration::numeric, 2) as "Duration (s)",
+  ROUND(COALESCE(s.avg_duration, 0)::numeric, 2) as "Avg Duration (s)",
+  CASE 
+    WHEN s.avg_duration IS NULL THEN 'Normal'
+    WHEN r.duration > (s.avg_duration + 2 * COALESCE(s.stddev_duration, 0)) THEN 'Critical'
+    WHEN r.duration > (s.avg_duration + COALESCE(s.stddev_duration, 0)) THEN 'Slow'
+    ELSE 'Normal'
+  END as "Performance",
+  ROUND(((r.duration - COALESCE(s.avg_duration, r.duration)) / NULLIF(s.avg_duration, 0) * 100)::numeric, 1) as "% vs Baseline"
+FROM recent_runs r
+LEFT JOIN dag_stats s ON r.dag_id = s.dag_id
+ORDER BY r.start_date DESC
+LIMIT 100;
+```
+
+**คำอธิบายแต่ละส่วน**:
+
+1. **CTE: `dag_stats`** - คำนวณ baseline performance
+   - **`AVG(duration)`**: เวลาเฉลี่ยของ DAG runs ใน 7 วันที่ผ่านมา
+   - **`STDDEV(duration)`**: Standard deviation สำหรับ anomaly detection
+   - **เหตุผล**: ใช้เป็น baseline สำหรับเปรียบเทียบ current performance
+   - **ความสำคัญ**: **Statistical baseline** - ไม่ใช่ hardcoded threshold
+
+2. **CTE: `recent_runs`** - ดึง recent DAG runs
+   - **Time window**: ใช้ Grafana time range variables
+   - **`COALESCE(end_date, NOW())`**: Handle running DAGs
+   - **เหตุผล**: Focus ที่ recent executions
+   - **ความสำคัญ**: Real-time monitoring data
+
+3. **Performance Classification**:
+   ```sql
+   CASE 
+     WHEN duration > (avg + 2σ) THEN 'Critical'  -- > 95th percentile
+     WHEN duration > (avg + σ) THEN 'Slow'       -- > 68th percentile
+     ELSE 'Normal'
+   END
+   ```
+   - **Critical**: Duration เกิน mean + 2 standard deviations (statistical anomaly)
+   - **Slow**: Duration เกิน mean + 1 standard deviation (warning)
+   - **Normal**: Duration อยู่ใน expected range
+   - **เหตุผล**: ใช้ statistical approach แทน fixed thresholds
+   - **ความสำคัญ**: **Adaptive thresholds** - ปรับตาม historical data
+
+4. **% vs Baseline**:
+   - **Formula**: `(current - baseline) / baseline * 100`
+   - **เหตุผล**: แสดง percentage deviation จาก baseline
+   - **ความสำคัญ**: **Intuitive metric** - ง่ายต่อการเข้าใจว่าช้าขึ้นกี่เปอร์เซ็นต์
+
+**Visualization Features**:
+- **Status column**: Color-coded (เขียว=success, แดง=failed, น้ำเงิน=running, เหลือง=queued)
+- **Performance column**: Color-coded (เขียว=Normal, เหลือง=Slow, แดง=Critical)
+- **Duration column**: Gradient gauge (เขียว < 300s, เหลือง 300-600s, แดง > 600s)
+- **Deep links**: DAG ID links ไปยัง Airflow UI
+
+#### 🔗 DAG Dependency Chain (Producer → Asset → Consumer)
+
+```sql
+WITH asset_producers AS (
+  SELECT DISTINCT
+    ti.dag_id,
+    a.id as asset_id,
+    a.uri as asset_uri,
+    a.name as asset_name
+  FROM task_instance ti
+  JOIN asset_event ae ON ae.source_task_id = ti.task_id 
+    AND ae.source_dag_id = ti.dag_id
+  JOIN asset a ON ae.asset_id = a.id
+  WHERE ti.start_date >= $__timeFrom()
+    AND ti.start_date <= $__timeTo()
+),
+asset_consumers AS (
+  SELECT DISTINCT
+    dsar.dag_id,
+    dsar.asset_id,
+    a.uri as asset_uri,
+    a.name as asset_name
+  FROM dag_schedule_asset_reference dsar
+  JOIN asset a ON dsar.asset_id = a.id
+)
+SELECT 
+  p.dag_id as "Producer DAG",
+  p.asset_uri as "Asset URI",
+  COALESCE(p.asset_name, 'Unnamed') as "Asset Name",
+  c.dag_id as "Consumer DAG",
+  CASE 
+    WHEN EXISTS (
+      SELECT 1 FROM dag_run 
+      WHERE dag_id = c.dag_id 
+        AND state = 'running'
+    ) THEN 'Running'
+    WHEN EXISTS (
+      SELECT 1 FROM dag_run 
+      WHERE dag_id = c.dag_id 
+        AND state = 'queued'
+    ) THEN 'Queued'
+    ELSE 'Idle'
+  END as "Consumer Status"
+FROM asset_producers p
+JOIN asset_consumers c ON p.asset_id = c.asset_id
+ORDER BY p.dag_id, c.dag_id
+LIMIT 100;
+```
+
+**คำอธิบาย**:
+
+1. **CTE: `asset_producers`** - หา DAGs ที่ produce assets
+   - **Join `asset_event`**: เชื่อมกับ events ที่ tasks สร้าง assets
+   - **`source_task_id` และ `source_dag_id`**: Identify producer
+   - **เหตุผล**: ติดตาม DAGs ที่สร้าง data/assets
+   - **ความสำคัญ**: **Upstream identification** - รู้ว่า data มาจากไหน
+
+2. **CTE: `asset_consumers`** - หา DAGs ที่ consume assets
+   - **Table `dag_schedule_asset_reference`**: DAGs ที่ depend on assets
+   - **เหตุผล**: ติดตาม DAGs ที่รอ assets เพื่อ trigger
+   - **ความสำคัญ**: **Downstream identification** - รู้ว่า data ไปที่ไหน
+
+3. **Consumer Status**:
+   - **Running**: Consumer DAG กำลังทำงาน
+   - **Queued**: Consumer DAG รอ execution
+   - **Idle**: Consumer DAG ไม่ได้ทำงาน
+   - **เหตุผล**: Real-time status ของ downstream DAGs
+   - **ความสำคัญ**: **Flow visibility** - เห็น data flow แบบ real-time
+
+**Business Value**:
+- **Dependency Mapping**: เห็น producer → asset → consumer chain
+- **Impact Analysis**: รู้ว่าถ้า producer fail จะกระทบ consumer ไหนบ้าง
+- **Troubleshooting**: Debug dependency issues ได้ง่าย
+- **Data Lineage**: ติดตาม data flow ผ่าน assets
+
+#### 🎯 Critical Path Analysis (DAGs with High Downstream Impact)
+
+```sql
+WITH asset_producers AS (
+  SELECT DISTINCT
+    ti.dag_id,
+    ae.asset_id
+  FROM task_instance ti
+  JOIN asset_event ae ON ae.source_task_id = ti.task_id 
+    AND ae.source_dag_id = ti.dag_id
+  WHERE ti.start_date >= $__timeFrom()
+    AND ti.start_date <= $__timeTo()
+),
+downstream_counts AS (
+  SELECT 
+    p.dag_id,
+    COUNT(DISTINCT dsar.dag_id) as downstream_count
+  FROM asset_producers p
+  JOIN dag_schedule_asset_reference dsar ON p.asset_id = dsar.asset_id
+  GROUP BY p.dag_id
+),
+dag_performance AS (
+  SELECT 
+    dag_id,
+    AVG(EXTRACT(EPOCH FROM (end_date - start_date))) as avg_duration
+  FROM dag_run
+  WHERE state = 'success'
+    AND start_date > NOW() - INTERVAL '7 days'
+    AND end_date IS NOT NULL
+  GROUP BY dag_id
+)
+SELECT 
+  dc.dag_id as "DAG ID",
+  dc.downstream_count as "Downstream Count",
+  ROUND(COALESCE(dp.avg_duration, 0)::numeric, 2) as "Avg Duration (s)",
+  ROUND((dc.downstream_count * COALESCE(dp.avg_duration, 0))::numeric, 2) as "Total Impact (s)",
+  CASE 
+    WHEN dc.downstream_count >= 5 THEN 'High'
+    WHEN dc.downstream_count >= 2 THEN 'Medium'
+    ELSE 'Low'
+  END as "Impact Level"
+FROM downstream_counts dc
+LEFT JOIN dag_performance dp ON dc.dag_id = dp.dag_id
+ORDER BY dc.downstream_count DESC, dp.avg_duration DESC
+LIMIT 20;
+```
+
+**คำอธิบาย**:
+
+1. **Downstream Count**: จำนวน DAGs ที่ depend on DAG นี้
+   - **เหตุผล**: วัด impact radius
+   - **ความสำคัญ**: **Critical path indicator** - DAG ที่มี downstream เยอะ = critical
+
+2. **Total Impact (s)**: `downstream_count × avg_duration`
+   - **Formula**: จำนวน downstream × เวลาเฉลี่ยของ DAG
+   - **เหตุผล**: Estimate total time impact ถ้า DAG นี้ล่าช้า
+   - **ความสำคัญ**: **Business impact metric** - วัดผลกระทบต่อ overall pipeline
+
+3. **Impact Level Classification**:
+   - **High**: ≥ 5 downstream DAGs
+   - **Medium**: 2-4 downstream DAGs
+   - **Low**: < 2 downstream DAGs
+   - **เหตุผล**: Prioritize monitoring และ optimization efforts
+   - **ความสำคัญ**: **Risk assessment** - DAGs ที่ impact สูงต้อง monitor ใกล้ชิด
+
+**Business Value**:
+- **Optimization Priority**: รู้ว่าควร optimize DAG ไหนก่อน (high impact DAGs)
+- **Risk Management**: Identify critical DAGs ที่ต้อง monitor ใกล้ชิด
+- **Capacity Planning**: เข้าใจ dependencies เพื่อวางแผน resources
+- **SLA Planning**: DAGs ที่มี high impact ต้องมี strict SLAs
+
+#### 📈 DAG Duration Trend (Detect Performance Degradation)
+
+```sql
+SELECT 
+  DATE_TRUNC('hour', start_date) as time,
+  dag_id as metric,
+  AVG(EXTRACT(EPOCH FROM (end_date - start_date))) as value
+FROM dag_run
+WHERE state = 'success'
+  AND start_date >= $__timeFrom()
+  AND start_date <= $__timeTo()
+  AND end_date IS NOT NULL
+GROUP BY DATE_TRUNC('hour', start_date), dag_id
+ORDER BY time;
+```
+
+**คำอธิบาย**:
+- **Time series visualization**: แสดง duration trends over time
+- **Hourly aggregation**: Balance ระหว่าง granularity และ readability
+- **Per-DAG metrics**: แยกแสดงแต่ละ DAG เป็น separate line
+- **ความสำคัญ**: **Trend detection** - เห็น performance degradation over time
+
+**Use Cases**:
+- **Regression Detection**: เห็นว่า duration เพิ่มขึ้นหลัง deployment
+- **Pattern Recognition**: เห็น peak hours ที่ DAGs ทำงานช้า
+- **Capacity Planning**: เข้าใจ performance trends เพื่อวางแผน scaling
+
+#### 🔄 Workflow: การใช้งาน Dashboard
+
+**1. Monitor Job Flow Status**:
+- เปิด dashboard "Airflow Job Flow Visualization"
+- ดู statistics panels เพื่อเห็นภาพรวม
+- ดู main table เพื่อเห็น DAG runs พร้อม performance classification
+- **Focus**: DAGs ที่มี Performance = "Critical" หรือ "Slow"
+
+**2. Investigate Performance Anomalies**:
+- Filter table โดย Performance = "Critical"
+- ดู "% vs Baseline" เพื่อเห็น deviation
+- Click DAG ID เพื่อ drill-down ไปยัง Airflow UI
+- Check logs และ identify root cause
+
+**3. Analyze Dependency Impact**:
+- ดู "DAG Dependency Chain" table
+- Identify producer DAGs ที่ล่าช้า
+- Check Consumer Status เพื่อเห็น downstream impact
+- **Action**: ถ้า producer slow → consumers จะ delayed
+
+**4. Identify Critical Path**:
+- ดู "Critical Path Analysis" table
+- Sort by "Downstream Count" หรือ "Total Impact"
+- **Focus**: DAGs ที่มี Impact Level = "High"
+- **Action**: Prioritize optimization และ monitoring
+
+**5. Detect Performance Trends**:
+- ดู "DAG Duration Trend" chart
+- Identify DAGs ที่ duration เพิ่มขึ้นเรื่อยๆ
+- Correlate กับ deployments หรือ data volume changes
+- **Action**: Investigate และ optimize ก่อนกระทบ SLA
+
+#### 🚨 Alert Use Cases (สำหรับ Grafana Alerting)
+
+**Alert 1: Performance Anomaly Detected**
+```yaml
+Condition: Performance = "Critical"
+Threshold: > 0 DAGs
+Duration: 5 minutes
+Action: Send email/Teams notification
+Message: |
+  🚨 Performance Anomaly Detected
+  DAG: {{ dag_id }}
+  Current Duration: {{ duration }}s
+  Baseline: {{ avg_duration }}s
+  Deviation: +{{ percentage }}%
+```
+
+**Alert 2: High Impact DAG Delayed**
+```yaml
+Condition: (Impact Level = "High") AND (Performance != "Normal")
+Threshold: > 0 DAGs
+Duration: 10 minutes
+Action: Send email/Teams notification
+Message: |
+  ⚠️ Critical Path DAG Delayed
+  DAG: {{ dag_id }}
+  Downstream Impact: {{ downstream_count }} DAGs
+  Estimated Total Delay: {{ total_impact }}s
+```
+
+**Alert 3: Dependency Chain Broken**
+```yaml
+Condition: Producer DAG failed AND has downstream consumers
+Threshold: > 0 failures
+Duration: 1 minute
+Action: Send email/Teams notification
+Message: |
+  🔴 Dependency Chain Broken
+  Producer DAG: {{ producer_dag }}
+  Failed Asset: {{ asset_uri }}
+  Affected Consumers: {{ consumer_dags }}
+```
+
+#### 💡 Best Practices
+
+**Monitoring**:
+- ตรวจสอบ dashboard ทุกวันเพื่อ identify performance anomalies
+- Focus ที่ DAGs ที่มี "Critical" performance classification
+- Monitor Critical Path DAGs ใกล้ชิดเพราะมี high downstream impact
+- ตั้ง alerts สำหรับ performance anomalies และ dependency failures
+
+**Optimization**:
+- Prioritize optimization ของ DAGs ที่มี:
+  - High downstream count (critical path)
+  - Frequent "Critical" or "Slow" classifications
+  - Increasing duration trends
+- Use "% vs Baseline" เพื่อ quantify improvement หลัง optimization
+
+**Troubleshooting**:
+- เมื่อเห็น performance anomaly:
+  1. Check "DAG Dependency Chain" เพื่อเห็น upstream/downstream
+  2. Check "Critical Path Analysis" เพื่อประเมิน business impact
+  3. Use deep links ไปยัง Airflow UI เพื่อดู logs
+  4. Investigate root cause (data volume, resource contention, code changes)
+
+**Capacity Planning**:
+- ใช้ "Total Impact" metric เพื่อ prioritize resource allocation
+- Monitor duration trends เพื่อ predict future capacity needs
+- Identify peak hours จาก time series chart
+
+#### 🎯 Key Differences จาก Dashboard อื่น
+
+| Feature | Job Flow Visualization | DAGs Dashboard | Dependencies Dashboard |
+|---------|------------------------|----------------|------------------------|
+| **Focus** | Performance anomalies + dependencies | Operational status | Static dependencies |
+| **Anomaly Detection** | ✅ Statistical baseline | ❌ | ❌ |
+| **Critical Path** | ✅ Impact analysis | ❌ | ❌ |
+| **Real-time Flow** | ✅ Producer→Consumer status | ❌ | Partial |
+| **Use Case** | Performance monitoring + impact analysis | Daily operations | Dependency mapping |
+| **Alert Ready** | ✅ Anomaly-based alerts | Manual monitoring | Manual monitoring |
+
+#### 🔔 Integration with Control-M Style Monitoring
+
+Dashboard นี้ออกแบบมาเพื่อทำงานคล้าย **Control-M Viewpoint**:
+
+**Similar Features**:
+- ✅ Job flow visualization
+- ✅ Dependency chain tracking
+- ✅ Performance anomaly detection
+- ✅ Critical path identification
+- ✅ Real-time status monitoring
+
+**Enhanced Features** (เหนือกว่า Control-M):
+- 📊 Statistical anomaly detection (adaptive thresholds)
+- 🎯 Quantified impact analysis (Total Impact metric)
+- 📈 Historical trend analysis
+- 🔗 Deep links to detailed views
+- 💰 Open source (no licensing costs)
+
+**Best Practices**:
+- ใช้ dashboard นี้เป็น **primary monitoring dashboard** สำหรับ operations team
+- ตั้ง alerts สำหรับ performance anomalies และ dependency failures
+- Review Critical Path Analysis ทุกสัปดาห์เพื่อ prioritize optimization
+- Use dependency chain information สำหรับ impact analysis เมื่อมีปัญหา
+- Monitor duration trends เพื่อ proactive capacity planning
+
+---
+
 ### 🎨 Grid Layout Options
 
 #### ปัญหา
@@ -1827,7 +2274,7 @@ WHERE start_date >= $__timeFrom()
 
 ## 🎯 Summary
 
-เอกสารนี้ครอบคลุม **8 Grafana Dashboards** สำหรับ monitoring Apache Airflow 3.x โดยละเอียด:
+เอกสารนี้ครอบคลุม **9 Grafana Dashboards** สำหรับ monitoring Apache Airflow 3.x โดยละเอียด:
 
 1. **Airflow Metrics** - Real-time monitoring จาก Prometheus
 2. **Airflow DAGs** - ภาพรวมสถานะ DAGs และ Tasks
@@ -1837,6 +2284,7 @@ WHERE start_date >= $__timeFrom()
 6. **Airflow Error & Debugging** - Monitor errors และ failures
 7. **Airflow DAG Dependencies & Lineage** - ติดตาม dependencies และ data lineage
 8. **Airflow DAG Tasks Explorer** - Interactive drill-down สำหรับ explore tasks ใน DAG ที่เลือก
+9. **Airflow Job Flow Visualization** - Control-M style monitoring พร้อม performance anomaly detection และ critical path analysis
 
 แต่ละ dashboard มีคำอธิบายละเอียดเกี่ยวกับ:
 - **วัตถุประสงค์**: ใช้ดูอะไร

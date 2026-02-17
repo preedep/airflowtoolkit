@@ -1,0 +1,699 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-airflow-job-flow-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  airflow-job-flow-dashboard.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT COUNT(DISTINCT dag_id) as \"Total DAGs\" FROM dag WHERE bundle_name IS NOT NULL;",
+              "refId": "A"
+            }
+          ],
+          "title": "Total DAGs",
+          "type": "stat"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 0
+          },
+          "id": 2,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT COUNT(DISTINCT dag_id) as \"Running DAGs\" FROM dag_run WHERE state = 'running';",
+              "refId": "A"
+            }
+          ],
+          "title": "Running DAGs",
+          "type": "stat"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "orange",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 12,
+            "y": 0
+          },
+          "id": 3,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT COUNT(DISTINCT dag_id) as \"DAGs with Dependencies\" FROM dag_schedule_asset_reference;",
+              "refId": "A"
+            }
+          ],
+          "title": "DAGs with Dependencies",
+          "type": "stat"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "purple",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 18,
+            "y": 0
+          },
+          "id": 4,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "SELECT COUNT(DISTINCT id) as \"Total Assets\" FROM asset;",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Assets",
+          "type": "stat"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "displayMode": "auto"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "DAG ID"
+                },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Open in Airflow",
+                        "url": "${airflow_url}/dags/${__value.raw}",
+                        "targetBlank": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Status"
+                },
+                "properties": [
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-background"
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "options": {
+                          "running": {
+                            "color": "blue",
+                            "index": 0
+                          },
+                          "success": {
+                            "color": "green",
+                            "index": 1
+                          },
+                          "failed": {
+                            "color": "red",
+                            "index": 2
+                          },
+                          "queued": {
+                            "color": "yellow",
+                            "index": 3
+                          }
+                        },
+                        "type": "value"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Duration (s)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.displayMode",
+                    "value": "gradient-gauge"
+                  },
+                  {
+                    "id": "unit",
+                    "value": "s"
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 300
+                        },
+                        {
+                          "color": "red",
+                          "value": 600
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Performance"
+                },
+                "properties": [
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-background"
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "options": {
+                          "Normal": {
+                            "color": "green",
+                            "index": 0
+                          },
+                          "Slow": {
+                            "color": "yellow",
+                            "index": 1
+                          },
+                          "Critical": {
+                            "color": "red",
+                            "index": 2
+                          }
+                        },
+                        "type": "value"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 24,
+            "x": 0,
+            "y": 4
+          },
+          "id": 5,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Start Date"
+              }
+            ]
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "WITH dag_stats AS (\n  SELECT \n    dag_id,\n    AVG(EXTRACT(EPOCH FROM (end_date - start_date))) as avg_duration,\n    STDDEV(EXTRACT(EPOCH FROM (end_date - start_date))) as stddev_duration\n  FROM dag_run\n  WHERE state = 'success'\n    AND start_date > NOW() - INTERVAL '7 days'\n    AND end_date IS NOT NULL\n  GROUP BY dag_id\n),\nrecent_runs AS (\n  SELECT \n    dr.dag_id,\n    dr.run_id,\n    dr.state,\n    dr.start_date,\n    dr.end_date,\n    EXTRACT(EPOCH FROM (COALESCE(dr.end_date, NOW()) - dr.start_date)) as duration\n  FROM dag_run dr\n  WHERE dr.start_date >= $__timeFrom()\n    AND dr.start_date <= $__timeTo()\n)\nSELECT \n  r.dag_id as \"DAG ID\",\n  r.run_id as \"Run ID\",\n  r.state as \"Status\",\n  r.start_date as \"Start Date\",\n  r.end_date as \"End Date\",\n  ROUND(r.duration::numeric, 2) as \"Duration (s)\",\n  ROUND(COALESCE(s.avg_duration, 0)::numeric, 2) as \"Avg Duration (s)\",\n  CASE \n    WHEN s.avg_duration IS NULL THEN 'Normal'\n    WHEN r.duration > (s.avg_duration + 2 * COALESCE(s.stddev_duration, 0)) THEN 'Critical'\n    WHEN r.duration > (s.avg_duration + COALESCE(s.stddev_duration, 0)) THEN 'Slow'\n    ELSE 'Normal'\n  END as \"Performance\",\n  ROUND(((r.duration - COALESCE(s.avg_duration, r.duration)) / NULLIF(s.avg_duration, 0) * 100)::numeric, 1) as \"% vs Baseline\"\nFROM recent_runs r\nLEFT JOIN dag_stats s ON r.dag_id = s.dag_id\nORDER BY r.start_date DESC\nLIMIT 100;",
+              "refId": "A"
+            }
+          ],
+          "title": "Job Flow Status (with Performance Anomaly Detection)",
+          "type": "table"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "displayMode": "auto"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Producer DAG"
+                },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Open in Airflow",
+                        "url": "${airflow_url}/dags/${__value.raw}",
+                        "targetBlank": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Consumer DAG"
+                },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Open in Airflow",
+                        "url": "${airflow_url}/dags/${__value.raw}",
+                        "targetBlank": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 12,
+            "x": 0,
+            "y": 14
+          },
+          "id": 6,
+          "options": {
+            "showHeader": true
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "WITH asset_producers AS (\n  SELECT DISTINCT\n    ti.dag_id,\n    a.id as asset_id,\n    a.uri as asset_uri,\n    a.name as asset_name\n  FROM task_instance ti\n  JOIN asset_event ae ON ae.source_task_id = ti.task_id \n    AND ae.source_dag_id = ti.dag_id\n  JOIN asset a ON ae.asset_id = a.id\n  WHERE ti.start_date >= $__timeFrom()\n    AND ti.start_date <= $__timeTo()\n),\nasset_consumers AS (\n  SELECT DISTINCT\n    dsar.dag_id,\n    dsar.asset_id,\n    a.uri as asset_uri,\n    a.name as asset_name\n  FROM dag_schedule_asset_reference dsar\n  JOIN asset a ON dsar.asset_id = a.id\n)\nSELECT \n  p.dag_id as \"Producer DAG\",\n  p.asset_uri as \"Asset URI\",\n  COALESCE(p.asset_name, 'Unnamed') as \"Asset Name\",\n  c.dag_id as \"Consumer DAG\",\n  CASE \n    WHEN EXISTS (\n      SELECT 1 FROM dag_run \n      WHERE dag_id = c.dag_id \n        AND state = 'running'\n    ) THEN 'Running'\n    WHEN EXISTS (\n      SELECT 1 FROM dag_run \n      WHERE dag_id = c.dag_id \n        AND state = 'queued'\n    ) THEN 'Queued'\n    ELSE 'Idle'\n  END as \"Consumer Status\"\nFROM asset_producers p\nJOIN asset_consumers c ON p.asset_id = c.asset_id\nORDER BY p.dag_id, c.dag_id\nLIMIT 100;",
+              "refId": "A"
+            }
+          ],
+          "title": "DAG Dependency Chain (Producer → Asset → Consumer)",
+          "type": "table"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "displayMode": "auto"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "DAG ID"
+                },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Open in Airflow",
+                        "url": "${airflow_url}/dags/${__value.raw}",
+                        "targetBlank": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Impact Level"
+                },
+                "properties": [
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-background"
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "options": {
+                          "High": {
+                            "color": "red",
+                            "index": 0
+                          },
+                          "Medium": {
+                            "color": "yellow",
+                            "index": 1
+                          },
+                          "Low": {
+                            "color": "green",
+                            "index": 2
+                          }
+                        },
+                        "type": "value"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 12,
+            "x": 12,
+            "y": 14
+          },
+          "id": 7,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Downstream Count"
+              }
+            ]
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "table",
+              "rawSql": "WITH asset_producers AS (\n  SELECT DISTINCT\n    ti.dag_id,\n    ae.asset_id\n  FROM task_instance ti\n  JOIN asset_event ae ON ae.source_task_id = ti.task_id \n    AND ae.source_dag_id = ti.dag_id\n  WHERE ti.start_date >= $__timeFrom()\n    AND ti.start_date <= $__timeTo()\n),\ndownstream_counts AS (\n  SELECT \n    p.dag_id,\n    COUNT(DISTINCT dsar.dag_id) as downstream_count\n  FROM asset_producers p\n  JOIN dag_schedule_asset_reference dsar ON p.asset_id = dsar.asset_id\n  GROUP BY p.dag_id\n),\ndag_performance AS (\n  SELECT \n    dag_id,\n    AVG(EXTRACT(EPOCH FROM (end_date - start_date))) as avg_duration\n  FROM dag_run\n  WHERE state = 'success'\n    AND start_date > NOW() - INTERVAL '7 days'\n    AND end_date IS NOT NULL\n  GROUP BY dag_id\n)\nSELECT \n  dc.dag_id as \"DAG ID\",\n  dc.downstream_count as \"Downstream Count\",\n  ROUND(COALESCE(dp.avg_duration, 0)::numeric, 2) as \"Avg Duration (s)\",\n  ROUND((dc.downstream_count * COALESCE(dp.avg_duration, 0))::numeric, 2) as \"Total Impact (s)\",\n  CASE \n    WHEN dc.downstream_count >= 5 THEN 'High'\n    WHEN dc.downstream_count >= 2 THEN 'Medium'\n    ELSE 'Low'\n  END as \"Impact Level\"\nFROM downstream_counts dc\nLEFT JOIN dag_performance dp ON dc.dag_id = dp.dag_id\nORDER BY dc.downstream_count DESC, dp.avg_duration DESC\nLIMIT 20;",
+              "refId": "A"
+            }
+          ],
+          "title": "Critical Path Analysis (DAGs with High Downstream Impact)",
+          "type": "table"
+        },
+        {
+          "datasource": "Airflow PostgreSQL",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 24
+          },
+          "id": 8,
+          "options": {
+            "legend": {
+              "calcs": ["mean", "max"],
+              "displayMode": "table",
+              "placement": "right"
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          },
+          "targets": [
+            {
+              "datasource": "Airflow PostgreSQL",
+              "format": "time_series",
+              "rawSql": "SELECT \n  DATE_TRUNC('hour', start_date) as time,\n  dag_id as metric,\n  AVG(EXTRACT(EPOCH FROM (end_date - start_date))) as value\nFROM dag_run\nWHERE state = 'success'\n  AND start_date >= $__timeFrom()\n  AND start_date <= $__timeTo()\n  AND end_date IS NOT NULL\nGROUP BY DATE_TRUNC('hour', start_date), dag_id\nORDER BY time;",
+              "refId": "A"
+            }
+          ],
+          "title": "DAG Duration Trend (Detect Performance Degradation)",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 27,
+      "style": "dark",
+      "tags": ["airflow", "job-flow", "dependencies", "performance"],
+      "templating": {
+        "list": [
+          {
+            "name": "airflow_url",
+            "type": "textbox",
+            "label": "Airflow URL",
+            "description": "Airflow web UI base URL (e.g., http://localhost:30080)",
+            "query": "http://localhost:30080",
+            "current": {
+              "value": "http://localhost:30080",
+              "text": "http://localhost:30080"
+            },
+            "options": [
+              {
+                "value": "http://localhost:30080",
+                "text": "http://localhost:30080"
+              }
+            ]
+          }
+        ]
+      },
+      "time": {
+        "from": "now-24h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Airflow Job Flow Visualization",
+      "uid": "airflow-job-flow",
+      "version": 1
+    }
