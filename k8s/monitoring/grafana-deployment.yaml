@@ -61,6 +61,9 @@ spec:
         - name: grafana-dashboard-job-flow
           mountPath: /var/lib/grafana/dashboards/airflow-job-flow.json
           subPath: airflow-job-flow-dashboard.json
+        - name: grafana-dashboard-sla-baseline
+          mountPath: /var/lib/grafana/dashboards/airflow-sla-baseline.json
+          subPath: airflow-sla-baseline.json
         resources:
           requests:
             memory: "256Mi"
@@ -117,3 +120,6 @@ spec:
       - name: grafana-dashboard-job-flow
         configMap:
           name: grafana-airflow-job-flow-dashboard
+      - name: grafana-dashboard-sla-baseline
+        configMap:
+          name: grafana-dashboard-sla-baseline
