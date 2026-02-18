@@ -93,10 +93,18 @@ redis:
 
 dags:
   persistence:
+    enabled: false
+  gitSync:
     enabled: true
-    size: 5Gi
-    storageClassName: hostpath
-    accessMode: ReadWriteMany
+    repo: https://github.com/preedep/airflowtoolkit.git
+    branch: develop
+    rev: HEAD
+    depth: 1
+    maxFailures: 0
+    subPath: "dags"
+    wait: 60
+    containerName: git-sync
+    uid: 65533
 
 logs:
   persistence:
@@ -143,4 +151,3 @@ extraEnv: |
       secretKeyRef:
         name: airflow-connections
         key: AIRFLOW_CONN_AIRFLOW_EXTENSION
-
