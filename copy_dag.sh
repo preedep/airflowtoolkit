@@ -63,50 +63,36 @@ echo "✅ DAG file copied successfully!"
 echo ""
 
 # Wait for DAG to be parsed
-echo "⏳ Waiting for DAG to be parsed by dag-processor..."
-echo "   This may take 1-3 minutes depending on the number of DAGs"
-echo ""
-
-# Try to check if DAG is parsed (with retries)
-MAX_RETRIES=6
-RETRY_INTERVAL=10
+echo "⏳ Waiting for DAG to be parsed..."
+MAX_RETRIES=12
 RETRY_COUNT=0
+WAIT_SECONDS=10
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-    echo "🔍 Checking if DAG is parsed (attempt $RETRY_COUNT/$MAX_RETRIES)..."
+    echo "   Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES (waiting ${WAIT_SECONDS}s)..."
+    sleep $WAIT_SECONDS
     
-    if kubectl exec -n airflow deployment/airflow-scheduler -- airflow dags list 2>&1 | grep -q baseline_compute_daily; then
-        echo "✅ DAG found in Airflow!"
-        
-        # Check if DAG is paused
-        IS_PAUSED=$(kubectl exec -n airflow deployment/airflow-scheduler -- airflow dags list 2>&1 | grep baseline_compute_daily | awk '{print $5}')
-        
-        if [ "$IS_PAUSED" = "True" ]; then
-            echo "🔓 Unpausing DAG..."
-            kubectl exec -n airflow deployment/airflow-scheduler -- airflow dags unpause baseline_compute_daily
-            echo "✅ DAG is now active!"
-        else
-            echo "✅ DAG is already active!"
-        fi
-        
-        # Success - exit loop
+    # Check if DAG is parsed
+    if kubectl exec -n airflow deployment/airflow-scheduler -c scheduler -- airflow dags list 2>&1 | grep -q "baseline_compute_daily"; then
+        echo "✅ DAG parsed successfully!"
         break
-    else
-        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-            echo "⏳ DAG not yet parsed, waiting ${RETRY_INTERVAL} seconds..."
-            sleep $RETRY_INTERVAL
-        else
-            echo ""
-            echo "⚠️  DAG not yet parsed after $((MAX_RETRIES * RETRY_INTERVAL)) seconds."
-            echo "   This is normal if you have many DAGs or just deployed Airflow."
-            echo ""
-            echo "   The DAG will appear in Airflow UI within a few minutes."
-            echo "   You can manually unpause it in the UI or run:"
-            echo "   kubectl exec -n airflow deployment/airflow-scheduler -- airflow dags unpause baseline_compute_daily"
-        fi
     fi
+    
+    RETRY_COUNT=$((RETRY_COUNT + 1))
 done
+
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+    echo "⚠️  DAG not yet parsed after $((MAX_RETRIES * WAIT_SECONDS)) seconds"
+    echo "   Please check dag-processor logs:"
+    echo "   kubectl logs -n airflow -l component=dag-processor -c dag-processor --tail=50"
+    exit 1
+fi
+
+# Unpause the DAG
+echo ""
+echo "🔓 Unpausing baseline_compute_daily DAG..."
+kubectl exec -n airflow deployment/airflow-scheduler -c scheduler -- airflow dags unpause baseline_compute_daily
+echo "✅ DAG is now active!"
 
 echo ""
 echo "=========================================="

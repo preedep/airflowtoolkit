@@ -103,7 +103,17 @@ sleep 30
 
 echo ""
 echo "📊 Checking parsed DAGs..."
-kubectl exec -n airflow deployment/airflow-scheduler -c scheduler -- airflow dags list 2>&1 | grep -v "^Error:" | tail -20
+PARSED_DAGS=$(kubectl exec -n airflow deployment/airflow-scheduler -c scheduler -- airflow dags list 2>&1 | grep -v "^Error:" | grep -E "baseline|dags-folder")
+
+if echo "$PARSED_DAGS" | grep -q "baseline_compute_daily"; then
+    echo "✅ baseline_compute_daily DAG found!"
+    echo ""
+    echo "🔓 Unpausing baseline_compute_daily DAG..."
+    kubectl exec -n airflow deployment/airflow-scheduler -c scheduler -- airflow dags unpause baseline_compute_daily
+    echo "✅ DAG is now active!"
+else
+    echo "⚠️  baseline_compute_daily DAG not found in parsed DAGs"
+fi
 
 echo ""
 echo "=========================================="
