@@ -34,7 +34,6 @@ EXT_CONN_ID = "airflow_extension"  # Airflow extension database (same instance)
         "owner": "airflow",
         "retries": 2,
         "retry_delay": timedelta(minutes=5),
-        "execution_timeout": timedelta(minutes=10),
     },
 )
 def baseline_compute_daily():
@@ -50,11 +49,11 @@ def baseline_compute_daily():
     def percentile(vals_sorted: List[float], p: float) -> float:
         """
         Calculate percentile from sorted values
-        
+
         Args:
             vals_sorted: Sorted list of values
             p: Percentile (0-100)
-            
+
         Returns:
             Percentile value
         """
@@ -71,130 +70,118 @@ def baseline_compute_daily():
     def extract(window_days: int) -> List[Dict[str, Any]]:
         """
         Extract task execution history from Airflow metadata database
-        
+
         Args:
             window_days: Number of days to look back
-            
+
         Returns:
             List of task execution records with duration
         """
         from airflow.operators.python import get_current_context
-        from datetime import datetime
-        
+
         ctx = get_current_context()
-        # Handle both scheduled and manual runs
-        if ctx.get("data_interval_end"):
-            as_of = ctx["data_interval_end"].date()
-        else:
-            # For manual runs, use current date
-            as_of = datetime.now().date()
-        
+        as_of = ctx["data_interval_end"].date()
+
         print(f"📊 Extracting task history for {window_days} days ending {as_of}")
-        
+
         meta = PostgresHook(postgres_conn_id=META_CONN_ID)
-        
+
         # Query successful task instances with duration
         sql = """
-        SELECT 
-            dag_id, 
-            task_id,
-            EXTRACT(EPOCH FROM (end_date - start_date)) AS duration_seconds
-        FROM task_instance
-        WHERE state = 'success'
-          AND start_date IS NOT NULL 
-          AND end_date IS NOT NULL
-          AND end_date >= start_date
-          AND end_date >= (%(as_of)s::date - (%(window_days)s::int || ' days')::interval)
-          AND end_date < (%(as_of)s::date + interval '1 day')
-        ORDER BY dag_id, task_id, end_date
-        ;
-        """
-        
+              SELECT
+                  dag_id,
+                  task_id,
+                  EXTRACT(EPOCH FROM (end_date - start_date)) AS duration_seconds
+              FROM task_instance
+              WHERE state = 'success'
+                AND start_date IS NOT NULL
+                AND end_date IS NOT NULL
+                AND end_date >= start_date
+                AND end_date >= (%(as_of)s::date - (%(window_days)s::int || ' days')::interval)
+                AND end_date < (%(as_of)s::date + interval '1 day')
+              ORDER BY dag_id, task_id, end_date
+              ; \
+              """
+
         rows = meta.get_records(
-            sql, 
+            sql,
             parameters={"as_of": str(as_of), "window_days": window_days}
         )
-        
+
         # Convert to list of dicts
         result = [
             {
-                "dag_id": r[0], 
-                "task_id": r[1], 
+                "dag_id": r[0],
+                "task_id": r[1],
                 "dur": float(r[2])
-            } 
-            for r in rows 
+            }
+            for r in rows
             if r[2] is not None and r[2] > 0
         ]
-        
+
         print(f"✅ Extracted {len(result)} task execution records")
         return result
 
     @task
     def compute(
-        rows: List[Dict[str, Any]], 
-        window_days: int, 
-        min_samples: int
+            rows: List[Dict[str, Any]],
+            window_days: int,
+            min_samples: int
     ) -> List[Dict[str, Any]]:
         """
         Compute baseline statistics from task execution history
-        
+
         Args:
             rows: Task execution records
             window_days: Window size in days
             min_samples: Minimum number of samples required
-            
+
         Returns:
             List of baseline statistics per task
         """
         from airflow.operators.python import get_current_context
-        from datetime import datetime
-        
+
         ctx = get_current_context()
-        # Handle both scheduled and manual runs
-        if ctx.get("data_interval_end"):
-            as_of = ctx["data_interval_end"].date()
-        else:
-            # For manual runs, use current date
-            as_of = datetime.now().date()
-        
+        as_of = ctx["data_interval_end"].date()
+
         print(f"🔢 Computing baselines from {len(rows)} records")
         print(f"   Min samples required: {min_samples}")
-        
+
         # Group by (dag_id, task_id)
         buckets: Dict[tuple, List[float]] = {}
         for r in rows:
             key = (r["dag_id"], r["task_id"])
             buckets.setdefault(key, []).append(r["dur"])
-        
+
         print(f"   Found {len(buckets)} unique tasks")
-        
+
         # Compute statistics for each task
         out = []
         skipped = 0
-        
+
         for (dag_id, task_id), vals in buckets.items():
             # Skip if insufficient samples
             if len(vals) < min_samples:
                 skipped += 1
                 continue
-            
+
             # Sort values for percentile calculation
             vals_sorted = sorted(vals)
             n = len(vals_sorted)
-            
+
             # Calculate statistics
             avg = sum(vals_sorted) / n
             var = sum((x - avg) ** 2 for x in vals_sorted) / (n - 1) if n > 1 else 0.0
             std = var ** 0.5
-            
+
             p50 = percentile(vals_sorted, 50)
             p90 = percentile(vals_sorted, 90)
             p95 = percentile(vals_sorted, 95)
             p99 = percentile(vals_sorted, 99)
-            
+
             # Recommended SLA = p95 + buffer
             recommended = p95 * (1.0 + BUFFER_PERCENT)
-            
+
             out.append({
                 "dag_id": dag_id,
                 "task_id": task_id,
@@ -210,61 +197,61 @@ def baseline_compute_daily():
                 "stddev_seconds": std,
                 "recommended_sla_seconds": recommended,
             })
-        
+
         print(f"✅ Computed {len(out)} baselines")
         print(f"⚠️  Skipped {skipped} tasks (insufficient samples)")
-        
+
         return out
 
     @task
     def upsert(baselines: List[Dict[str, Any]]) -> Dict[str, int]:
         """
         Upsert baselines into airflow_extension database
-        
+
         Args:
             baselines: List of baseline statistics
-            
+
         Returns:
             Summary of upsert operation
         """
         if not baselines:
             print("⚠️  No baselines to upsert")
             return {"inserted": 0, "updated": 0, "total": 0}
-        
+
         print(f"💾 Upserting {len(baselines)} baselines to database")
-        
+
         ext = PostgresHook(postgres_conn_id=EXT_CONN_ID)
-        
+
         # Upsert query with conflict resolution
         sql = """
-        INSERT INTO task_baseline (
-          dag_id, task_id, baseline_key, window_days, as_of_date, samples,
-          avg_seconds, p50_seconds, p90_seconds, p95_seconds, p99_seconds,
-          stddev_seconds, recommended_sla_seconds, updated_at
-        ) VALUES (
-          %(dag_id)s, %(task_id)s, %(baseline_key)s, %(window_days)s, %(as_of_date)s, %(samples)s,
-          %(avg_seconds)s, %(p50_seconds)s, %(p90_seconds)s, %(p95_seconds)s, %(p99_seconds)s,
-          %(stddev_seconds)s, %(recommended_sla_seconds)s, now()
-        )
-        ON CONFLICT (dag_id, task_id, baseline_key, window_days, as_of_date)
+              INSERT INTO task_baseline (
+                  dag_id, task_id, baseline_key, window_days, as_of_date, samples,
+                  avg_seconds, p50_seconds, p90_seconds, p95_seconds, p99_seconds,
+                  stddev_seconds, recommended_sla_seconds, updated_at
+              ) VALUES (
+                           %(dag_id)s, %(task_id)s, %(baseline_key)s, %(window_days)s, %(as_of_date)s, %(samples)s,
+                           %(avg_seconds)s, %(p50_seconds)s, %(p90_seconds)s, %(p95_seconds)s, %(p99_seconds)s,
+                           %(stddev_seconds)s, %(recommended_sla_seconds)s, now()
+                       )
+                  ON CONFLICT (dag_id, task_id, baseline_key, window_days, as_of_date)
         DO UPDATE SET
-          samples = EXCLUDED.samples,
-          avg_seconds = EXCLUDED.avg_seconds,
-          p50_seconds = EXCLUDED.p50_seconds,
-          p90_seconds = EXCLUDED.p90_seconds,
-          p95_seconds = EXCLUDED.p95_seconds,
-          p99_seconds = EXCLUDED.p99_seconds,
-          stddev_seconds = EXCLUDED.stddev_seconds,
-          recommended_sla_seconds = EXCLUDED.recommended_sla_seconds,
-          updated_at = now()
-        ;
-        """
-        
+                  samples = EXCLUDED.samples,
+                                 avg_seconds = EXCLUDED.avg_seconds,
+                                 p50_seconds = EXCLUDED.p50_seconds,
+                                 p90_seconds = EXCLUDED.p90_seconds,
+                                 p95_seconds = EXCLUDED.p95_seconds,
+                                 p99_seconds = EXCLUDED.p99_seconds,
+                                 stddev_seconds = EXCLUDED.stddev_seconds,
+                                 recommended_sla_seconds = EXCLUDED.recommended_sla_seconds,
+                                 updated_at = now()
+              ; \
+              """
+
         # Execute batch insert/update
         ext.run(sql, parameters=baselines)
-        
+
         print(f"✅ Successfully upserted {len(baselines)} baselines")
-        
+
         # Print sample statistics
         if baselines:
             print("\n📊 Sample baselines:")
@@ -275,7 +262,7 @@ def baseline_compute_daily():
                       f"samples={b['samples']}")
             if len(baselines) > 5:
                 print(f"   ... and {len(baselines) - 5} more")
-        
+
         return {
             "inserted": len(baselines),
             "updated": 0,  # Can't distinguish in ON CONFLICT
