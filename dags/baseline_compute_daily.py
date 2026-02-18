@@ -248,7 +248,8 @@ def baseline_compute_daily():
               """
 
         # Execute batch insert/update
-        ext.run(sql, parameters=baselines)
+        for baseline in baselines:
+            ext.run(sql, parameters=baseline)
 
         print(f"✅ Successfully upserted {len(baselines)} baselines")
 
