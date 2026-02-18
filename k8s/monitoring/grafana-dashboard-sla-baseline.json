@@ -1,0 +1,839 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Airflow Extension",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  ROUND(\n    (COUNT(*) FILTER (WHERE actual_duration <= baseline_p95) * 100.0) / NULLIF(COUNT(*), 0),\n    2\n  ) as sla_compliance_rate\nFROM (\n  SELECT \n    ti.dag_id,\n    ti.task_id,\n    ti.duration as actual_duration,\n    tb.baseline_p95\n  FROM airflow.task_instance ti\n  JOIN airflow_extension.task_baseline tb \n    ON ti.dag_id = tb.dag_id \n    AND ti.task_id = tb.task_id\n  WHERE ti.start_date >= NOW() - INTERVAL '24 hours'\n    AND ti.state = 'success'\n    AND ti.duration IS NOT NULL\n) t;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": ["value"],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "SLA Compliance Rate (24h)",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Airflow Extension",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) as total_tasks\nFROM airflow.task_instance\nWHERE start_date >= NOW() - INTERVAL '24 hours'\n  AND state IN ('success', 'failed', 'running');",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Tasks (24h)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Airflow Extension",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) as sla_violations\nFROM (\n  SELECT \n    ti.dag_id,\n    ti.task_id,\n    ti.duration as actual_duration,\n    tb.baseline_p95\n  FROM airflow.task_instance ti\n  JOIN airflow_extension.task_baseline tb \n    ON ti.dag_id = tb.dag_id \n    AND ti.task_id = tb.task_id\n  WHERE ti.start_date >= NOW() - INTERVAL '24 hours'\n    AND ti.state = 'success'\n    AND ti.duration IS NOT NULL\n    AND ti.duration > tb.baseline_p95\n) t;",
+          "refId": "A"
+        }
+      ],
+      "title": "SLA Violations (24h)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Airflow Extension",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 3
+              },
+              {
+                "color": "orange",
+                "value": 5
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) as at_risk_tasks\nFROM (\n  SELECT \n    ti.dag_id,\n    ti.task_id,\n    ti.duration as actual_duration,\n    tb.baseline_p95\n  FROM airflow.task_instance ti\n  JOIN airflow_extension.task_baseline tb \n    ON ti.dag_id = tb.dag_id \n    AND ti.task_id = tb.task_id\n  WHERE ti.state = 'running'\n    AND ti.start_date IS NOT NULL\n    AND (EXTRACT(EPOCH FROM (NOW() - ti.start_date))) > (tb.baseline_p95 * 0.8)\n    AND (EXTRACT(EPOCH FROM (NOW() - ti.start_date))) <= tb.baseline_p95\n) t;",
+          "refId": "A"
+        }
+      ],
+      "title": "At Risk Tasks (>80% baseline)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Airflow Extension",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  DATE_TRUNC('hour', ti.start_date) as time,\n  ROUND(\n    (COUNT(*) FILTER (WHERE ti.duration <= tb.baseline_p95) * 100.0) / NULLIF(COUNT(*), 0),\n    2\n  ) as \"SLA Compliance %\"\nFROM airflow.task_instance ti\nJOIN airflow_extension.task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '7 days'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\nGROUP BY DATE_TRUNC('hour', ti.start_date)\nORDER BY time;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": ["value"],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "SLA Compliance Trend (7 days)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Airflow Extension",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  DATE_TRUNC('hour', ti.start_date) as time,\n  AVG(ti.duration) as \"Actual Duration\",\n  AVG(tb.baseline_p50) as \"Baseline P50\",\n  AVG(tb.baseline_p95) as \"Baseline P95 (SLA)\"\nFROM airflow.task_instance ti\nJOIN airflow_extension.task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '7 days'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\nGROUP BY DATE_TRUNC('hour', ti.start_date)\nORDER BY time;",
+          "refId": "A"
+        }
+      ],
+      "title": "Baseline vs Actual Duration Trend",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Airflow Extension",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "lastNotNull", "max"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  DATE_TRUNC('hour', ti.start_date) as time,\n  ti.dag_id,\n  AVG(ti.duration) as duration\nFROM airflow.task_instance ti\nWHERE ti.start_date >= NOW() - INTERVAL '7 days'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\nGROUP BY DATE_TRUNC('hour', ti.start_date), ti.dag_id\nORDER BY time;",
+          "refId": "A"
+        }
+      ],
+      "title": "Task Duration Trend by DAG",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Airflow Extension",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "color-background"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.8
+              },
+              {
+                "color": "orange",
+                "value": 1.0
+              },
+              {
+                "color": "red",
+                "value": 1.2
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "id": 8,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "SLA Ratio"
+          }
+        ]
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  ti.dag_id as \"DAG ID\",\n  ti.task_id as \"Task ID\",\n  ti.state as \"State\",\n  ROUND(EXTRACT(EPOCH FROM (NOW() - ti.start_date)), 2) as \"Running Time (s)\",\n  ROUND(tb.baseline_p95, 2) as \"Baseline P95 (s)\",\n  ROUND(\n    EXTRACT(EPOCH FROM (NOW() - ti.start_date)) / NULLIF(tb.baseline_p95, 0),\n    2\n  ) as \"SLA Ratio\"\nFROM airflow.task_instance ti\nJOIN airflow_extension.task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.state = 'running'\n  AND ti.start_date IS NOT NULL\nORDER BY \"SLA Ratio\" DESC\nLIMIT 20;",
+          "refId": "A"
+        }
+      ],
+      "title": "Current Running Tasks (SLA Monitor)",
+      "type": "table"
+    },
+    {
+      "datasource": "Airflow Extension",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Violation %"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 10
+                    },
+                    {
+                      "color": "orange",
+                      "value": 20
+                    },
+                    {
+                      "color": "red",
+                      "value": 30
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 9,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Violation Time"
+          }
+        ]
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  ti.dag_id as \"DAG ID\",\n  ti.task_id as \"Task ID\",\n  ti.start_date as \"Start Time\",\n  ROUND(ti.duration, 2) as \"Actual Duration (s)\",\n  ROUND(tb.baseline_p95, 2) as \"Baseline P95 (s)\",\n  ROUND(\n    ((ti.duration - tb.baseline_p95) / NULLIF(tb.baseline_p95, 0)) * 100,\n    2\n  ) as \"Violation %\",\n  ti.end_date as \"End Time\"\nFROM airflow.task_instance ti\nJOIN airflow_extension.task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '24 hours'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\n  AND ti.duration > tb.baseline_p95\nORDER BY ti.start_date DESC\nLIMIT 20;",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent SLA Violations (24h)",
+      "type": "table"
+    },
+    {
+      "datasource": "Airflow Extension",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "color-background"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1.5
+              },
+              {
+                "color": "orange",
+                "value": 2.0
+              },
+              {
+                "color": "red",
+                "value": 3.0
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "id": 10,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Slowdown Factor"
+          }
+        ]
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  ti.dag_id as \"DAG ID\",\n  ti.task_id as \"Task ID\",\n  COUNT(*) as \"Occurrences\",\n  ROUND(AVG(ti.duration), 2) as \"Avg Actual (s)\",\n  ROUND(AVG(tb.baseline_p95), 2) as \"Baseline P95 (s)\",\n  ROUND(\n    AVG(ti.duration) / NULLIF(AVG(tb.baseline_p95), 0),\n    2\n  ) as \"Slowdown Factor\"\nFROM airflow.task_instance ti\nJOIN airflow_extension.task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '7 days'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\n  AND ti.duration > tb.baseline_p95\nGROUP BY ti.dag_id, ti.task_id\nORDER BY \"Slowdown Factor\" DESC\nLIMIT 10;",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 Slowest Tasks (vs Baseline)",
+      "type": "table"
+    },
+    {
+      "datasource": "Airflow Extension",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "cellOptions": {
+              "type": "color-background"
+            },
+            "filterable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "yellow",
+                "value": 3
+              },
+              {
+                "color": "green",
+                "value": 5
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "id": 11,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  EXTRACT(HOUR FROM ti.start_date) as \"Hour\",\n  COUNT(*) FILTER (WHERE ti.duration > tb.baseline_p95) as \"Violations\"\nFROM airflow.task_instance ti\nJOIN airflow_extension.task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '7 days'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\nGROUP BY EXTRACT(HOUR FROM ti.start_date)\nORDER BY \"Hour\";",
+          "refId": "A"
+        }
+      ],
+      "title": "SLA Violation Heatmap (by Hour of Day)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": ["airflow", "sla", "baseline", "monitoring"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Airflow SLA & Baseline Monitoring",
+  "uid": "airflow-sla-baseline",
+  "version": 0
+}
