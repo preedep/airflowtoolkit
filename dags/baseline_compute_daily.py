@@ -94,9 +94,15 @@ def baseline_compute_daily():
             List of task execution records with duration
         """
         from airflow.operators.python import get_current_context
+        from datetime import datetime
         
         ctx = get_current_context()
-        as_of = ctx["data_interval_end"].date()
+        # Handle both scheduled and manual runs
+        if "data_interval_end" in ctx and ctx["data_interval_end"]:
+            as_of = ctx["data_interval_end"].date()
+        else:
+            # For manual runs, use current date
+            as_of = datetime.now().date()
         
         print(f"📊 Extracting task history for {window_days} days ending {as_of}")
         
@@ -156,9 +162,15 @@ def baseline_compute_daily():
             List of baseline statistics per task
         """
         from airflow.operators.python import get_current_context
+        from datetime import datetime
         
         ctx = get_current_context()
-        as_of = ctx["data_interval_end"].date()
+        # Handle both scheduled and manual runs
+        if "data_interval_end" in ctx and ctx["data_interval_end"]:
+            as_of = ctx["data_interval_end"].date()
+        else:
+            # For manual runs, use current date
+            as_of = datetime.now().date()
         
         print(f"🔢 Computing baselines from {len(rows)} records")
         print(f"   Min samples required: {min_samples}")
