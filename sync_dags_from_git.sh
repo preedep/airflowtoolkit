@@ -54,7 +54,7 @@ echo ""
 # Get all relevant pods
 SCHEDULER_PODS=$(kubectl get pods -n airflow -l component=scheduler -o jsonpath='{.items[*].metadata.name}')
 DAG_PROCESSOR_PODS=$(kubectl get pods -n airflow -l component=dag-processor -o jsonpath='{.items[*].metadata.name}')
-WEBSERVER_PODS=$(kubectl get pods -n airflow -l component=webserver -o jsonpath='{.items[*].metadata.name}')
+API_SERVER_PODS=$(kubectl get pods -n airflow -l component=api-server -o jsonpath='{.items[*].metadata.name}')
 
 # Copy DAGs to scheduler pods
 for POD in $SCHEDULER_PODS; do
@@ -76,13 +76,13 @@ for POD in $DAG_PROCESSOR_PODS; do
     echo "✅ Synced to $POD"
 done
 
-# Copy DAGs to webserver pods (if any)
-if [ -n "$WEBSERVER_PODS" ]; then
-    for POD in $WEBSERVER_PODS; do
-        echo "📦 Syncing to webserver pod: $POD"
+# Copy DAGs to api-server pods (Airflow 3.x)
+if [ -n "$API_SERVER_PODS" ]; then
+    for POD in $API_SERVER_PODS; do
+        echo "📦 Syncing to api-server pod: $POD"
         for DAG_FILE in $DAG_FILES; do
             DAG_NAME=$(basename "$DAG_FILE")
-            kubectl cp "$DAG_FILE" airflow/$POD:/opt/airflow/dags/$DAG_NAME -c webserver
+            kubectl cp "$DAG_FILE" airflow/$POD:/opt/airflow/dags/$DAG_NAME -c api-server
         done
         echo "✅ Synced to $POD"
     done

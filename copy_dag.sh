@@ -30,7 +30,7 @@ echo ""
 # Get all relevant pods
 SCHEDULER_PODS=$(kubectl get pods -n airflow -l component=scheduler -o jsonpath='{.items[*].metadata.name}')
 DAG_PROCESSOR_PODS=$(kubectl get pods -n airflow -l component=dag-processor -o jsonpath='{.items[*].metadata.name}')
-WEBSERVER_PODS=$(kubectl get pods -n airflow -l component=webserver -o jsonpath='{.items[*].metadata.name}')
+API_SERVER_PODS=$(kubectl get pods -n airflow -l component=api-server -o jsonpath='{.items[*].metadata.name}')
 
 # Copy to scheduler pods
 for POD in $SCHEDULER_PODS; do
@@ -46,10 +46,10 @@ for POD in $DAG_PROCESSOR_PODS; do
     echo "✅ Copied to $POD"
 done
 
-# Copy to webserver pods
-for POD in $WEBSERVER_PODS; do
-    echo "📦 Copying to webserver pod: $POD"
-    kubectl cp dags/baseline_compute_daily.py airflow/$POD:/opt/airflow/dags/baseline_compute_daily.py -c webserver
+# Copy to api-server pods (Airflow 3.x)
+for POD in $API_SERVER_PODS; do
+    echo "📦 Copying to api-server pod: $POD"
+    kubectl cp dags/baseline_compute_daily.py airflow/$POD:/opt/airflow/dags/baseline_compute_daily.py -c api-server
     echo "✅ Copied to $POD"
 done
 
