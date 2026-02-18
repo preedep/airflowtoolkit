@@ -25,7 +25,7 @@ EXT_CONN_ID = "airflow_extension"  # Airflow extension database (same instance)
 @dag(
     dag_id="baseline_compute_daily",
     start_date=pendulum.datetime(2025, 1, 1, tz="Asia/Bangkok"),
-    schedule="0 2 * * *",  # Daily at 2:00 AM
+    schedule="*/5 * * * *",  # Every 5 minutes (POC mode)
     catchup=False,
     max_active_runs=1,
     tags=["baseline", "sla", "monitoring"],
@@ -42,7 +42,7 @@ def baseline_compute_daily():
     """
     # Configuration
     WINDOW_DAYS = 14  # Look back 14 days
-    MIN_SAMPLES = 20  # Minimum 20 successful runs required
+    MIN_SAMPLES = 2  # Minimum 2 successful runs required (lowered for testing)
     BASELINE_KEY = "default"  # Baseline context key
     BUFFER_PERCENT = 0.15  # Recommended SLA = p95 * (1 + 15%)
 
