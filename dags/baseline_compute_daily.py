@@ -83,7 +83,7 @@ def baseline_compute_daily():
         
         ctx = get_current_context()
         # Handle both scheduled and manual runs
-        if "data_interval_end" in ctx and ctx["data_interval_end"]:
+        if ctx.get("data_interval_end"):
             as_of = ctx["data_interval_end"].date()
         else:
             # For manual runs, use current date
@@ -151,7 +151,7 @@ def baseline_compute_daily():
         
         ctx = get_current_context()
         # Handle both scheduled and manual runs
-        if "data_interval_end" in ctx and ctx["data_interval_end"]:
+        if ctx.get("data_interval_end"):
             as_of = ctx["data_interval_end"].date()
         else:
             # For manual runs, use current date
