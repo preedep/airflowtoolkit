@@ -115,7 +115,12 @@ helm repo add apache-airflow https://airflow.apache.org
 helm repo update
 
 echo ""
-echo "Step 6: Installing Airflow 3.x with Example DAGs..."
+echo "Step 6: Deploying Airflow Connections and Baseline DAG..."
+kubectl apply -f k8s/airflow/airflow-connections-secret.yaml
+kubectl apply -f k8s/airflow/baseline-dag-configmap.yaml
+
+echo ""
+echo "Step 7: Installing Airflow 3.x with Example DAGs..."
 helm upgrade --install airflow apache-airflow/airflow \
   --namespace airflow \
   --values "$TMP_DIR/values.yaml" \
@@ -129,7 +134,7 @@ kubectl wait --for=condition=ready pod -l component=scheduler -n airflow --timeo
 kubectl wait --for=condition=ready pod -l component=dag-processor -n airflow --timeout=600s
 
 echo ""
-echo "Step 7: Exposing Airflow UI via NodePort..."
+echo "Step 8: Exposing Airflow UI via NodePort..."
 kubectl apply -f k8s/airflow/api-server-nodeport.yaml
 
 echo ""

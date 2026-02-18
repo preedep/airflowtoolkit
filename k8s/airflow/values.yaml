@@ -130,3 +130,34 @@ createUserJob:
 migrateDatabaseJob:
   useHelmHooks: false
   applyCustomEnv: true
+
+# Extra environment variables for connections
+extraEnv: |
+  - name: AIRFLOW_CONN_AIRFLOW_METADATA
+    valueFrom:
+      secretKeyRef:
+        name: airflow-connections
+        key: AIRFLOW_CONN_AIRFLOW_METADATA
+  - name: AIRFLOW_CONN_AIRFLOW_EXTENSION
+    valueFrom:
+      secretKeyRef:
+        name: airflow-connections
+        key: AIRFLOW_CONN_AIRFLOW_EXTENSION
+
+# Extra ConfigMaps to mount as volumes
+extraConfigMaps:
+  baseline-dag: |
+    baseline_compute_daily.py
+
+# Extra volumes
+extraVolumes:
+  - name: baseline-dag
+    configMap:
+      name: baseline-dag
+
+# Extra volume mounts
+extraVolumeMounts:
+  - name: baseline-dag
+    mountPath: /opt/airflow/dags/baseline_compute_daily.py
+    subPath: baseline_compute_daily.py
+    readOnly: true
