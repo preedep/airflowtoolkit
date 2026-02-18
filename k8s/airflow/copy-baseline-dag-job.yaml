@@ -1,0 +1,158 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: copy-baseline-dag
+  namespace: airflow
+spec:
+  ttlSecondsAfterFinished: 100
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: copy-dag
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          echo "Copying baseline_compute_daily.py to dags volume..."
+          cat > /opt/airflow/dags/baseline_compute_daily.py << 'EOFDAG'
+          $(cat <<'INNEREOF'
+from __future__ import annotations
+from datetime import timedelta
+from typing import Dict, Any, List
+import pendulum
+from airflow.decorators import dag, task
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+
+META_CONN_ID = "airflow_metadata"
+EXT_CONN_ID = "airflow_extension"
+
+@dag(
+    dag_id="baseline_compute_daily",
+    start_date=pendulum.datetime(2025, 1, 1, tz="Asia/Bangkok"),
+    schedule="0 2 * * *",
+    catchup=False,
+    max_active_runs=1,
+    tags=["baseline", "sla", "monitoring"],
+    default_args={
+        "owner": "airflow",
+        "retries": 2,
+        "retry_delay": timedelta(minutes=5),
+    },
+)
+def baseline_compute_daily():
+    WINDOW_DAYS = 14
+    MIN_SAMPLES = 20
+    BASELINE_KEY = "default"
+    BUFFER_PERCENT = 0.15
+
+    def percentile(vals_sorted: List[float], p: float) -> float:
+        if not vals_sorted:
+            return 0.0
+        k = (len(vals_sorted) - 1) * (p / 100.0)
+        f = int(k)
+        c = min(f + 1, len(vals_sorted) - 1)
+        if f == c:
+            return float(vals_sorted[f])
+        return float(vals_sorted[f] * (c - k) + vals_sorted[c] * (k - f))
+
+    @task
+    def extract(window_days: int) -> List[Dict[str, Any]]:
+        from airflow.operators.python import get_current_context
+        ctx = get_current_context()
+        as_of = ctx["data_interval_end"].date()
+        print(f"Extracting task history for {window_days} days ending {as_of}")
+        meta = PostgresHook(postgres_conn_id=META_CONN_ID)
+        sql = """
+        SELECT dag_id, task_id, EXTRACT(EPOCH FROM (end_date - start_date)) AS duration_seconds
+        FROM task_instance
+        WHERE state = 'success' AND start_date IS NOT NULL AND end_date IS NOT NULL
+          AND end_date >= start_date
+          AND end_date >= (%(as_of)s::date - (%(window_days)s::int || ' days')::interval)
+          AND end_date < (%(as_of)s::date + interval '1 day')
+        ORDER BY dag_id, task_id, end_date;
+        """
+        rows = meta.get_records(sql, parameters={"as_of": str(as_of), "window_days": window_days})
+        result = [{"dag_id": r[0], "task_id": r[1], "dur": float(r[2])} for r in rows if r[2] is not None and r[2] > 0]
+        print(f"Extracted {len(result)} task execution records")
+        return result
+
+    @task
+    def compute(rows: List[Dict[str, Any]], window_days: int, min_samples: int) -> List[Dict[str, Any]]:
+        from airflow.operators.python import get_current_context
+        ctx = get_current_context()
+        as_of = ctx["data_interval_end"].date()
+        print(f"Computing baselines from {len(rows)} records")
+        buckets: Dict[tuple, List[float]] = {}
+        for r in rows:
+            buckets.setdefault((r["dag_id"], r["task_id"]), []).append(r["dur"])
+        out = []
+        skipped = 0
+        for (dag_id, task_id), vals in buckets.items():
+            if len(vals) < min_samples:
+                skipped += 1
+                continue
+            vals_sorted = sorted(vals)
+            n = len(vals_sorted)
+            avg = sum(vals_sorted) / n
+            var = sum((x - avg) ** 2 for x in vals_sorted) / (n - 1) if n > 1 else 0.0
+            std = var ** 0.5
+            p50 = percentile(vals_sorted, 50)
+            p90 = percentile(vals_sorted, 90)
+            p95 = percentile(vals_sorted, 95)
+            p99 = percentile(vals_sorted, 99)
+            recommended = p95 * (1.0 + BUFFER_PERCENT)
+            out.append({
+                "dag_id": dag_id, "task_id": task_id, "baseline_key": BASELINE_KEY,
+                "window_days": window_days, "as_of_date": str(as_of), "samples": n,
+                "avg_seconds": avg, "p50_seconds": p50, "p90_seconds": p90,
+                "p95_seconds": p95, "p99_seconds": p99, "stddev_seconds": std,
+                "recommended_sla_seconds": recommended,
+            })
+        print(f"Computed {len(out)} baselines, skipped {skipped} tasks")
+        return out
+
+    @task
+    def upsert(baselines: List[Dict[str, Any]]) -> Dict[str, int]:
+        if not baselines:
+            print("No baselines to upsert")
+            return {"total": 0}
+        print(f"Upserting {len(baselines)} baselines to database")
+        ext = PostgresHook(postgres_conn_id=EXT_CONN_ID)
+        sql = """
+        INSERT INTO task_baseline (dag_id, task_id, baseline_key, window_days, as_of_date, samples,
+          avg_seconds, p50_seconds, p90_seconds, p95_seconds, p99_seconds, stddev_seconds, 
+          recommended_sla_seconds, updated_at)
+        VALUES (%(dag_id)s, %(task_id)s, %(baseline_key)s, %(window_days)s, %(as_of_date)s, %(samples)s,
+          %(avg_seconds)s, %(p50_seconds)s, %(p90_seconds)s, %(p95_seconds)s, %(p99_seconds)s,
+          %(stddev_seconds)s, %(recommended_sla_seconds)s, now())
+        ON CONFLICT (dag_id, task_id, baseline_key, window_days, as_of_date)
+        DO UPDATE SET samples = EXCLUDED.samples, avg_seconds = EXCLUDED.avg_seconds,
+          p50_seconds = EXCLUDED.p50_seconds, p90_seconds = EXCLUDED.p90_seconds,
+          p95_seconds = EXCLUDED.p95_seconds, p99_seconds = EXCLUDED.p99_seconds,
+          stddev_seconds = EXCLUDED.stddev_seconds, recommended_sla_seconds = EXCLUDED.recommended_sla_seconds,
+          updated_at = now();
+        """
+        ext.run(sql, parameters=baselines)
+        print(f"Successfully upserted {len(baselines)} baselines")
+        return {"total": len(baselines)}
+
+    rows = extract(WINDOW_DAYS)
+    baselines = compute(rows, WINDOW_DAYS, MIN_SAMPLES)
+    upsert(baselines)
+
+baseline_compute_daily()
+INNEREOF
+)
+          EOFDAG
+          echo "DAG file created successfully"
+          ls -la /opt/airflow/dags/
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+      volumes:
+      - name: dags
+        persistentVolumeClaim:
+          claimName: airflow-dags

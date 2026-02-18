@@ -144,18 +144,13 @@ extraEnv: |
         name: airflow-connections
         key: AIRFLOW_CONN_AIRFLOW_EXTENSION
 
-# Extra ConfigMaps to mount as volumes
-extraConfigMaps:
-  baseline-dag: |
-    baseline_compute_daily.py
-
-# Extra volumes
+# Extra volumes for baseline DAG
 extraVolumes:
   - name: baseline-dag
     configMap:
       name: baseline-dag
 
-# Extra volume mounts
+# Extra volume mounts for baseline DAG
 extraVolumeMounts:
   - name: baseline-dag
     mountPath: /opt/airflow/dags/baseline_compute_daily.py
