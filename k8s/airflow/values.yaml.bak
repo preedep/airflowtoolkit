@@ -1,0 +1,163 @@
+---
+# Airflow 3.x Helm values for Docker Desktop Kubernetes
+executor: KubernetesExecutor
+
+images:
+  airflow:
+    repository: apache/airflow
+    tag: "3.0.2"
+    pullPolicy: IfNotPresent
+
+env:
+  - name: AIRFLOW__CORE__LOAD_EXAMPLES
+    value: "True"
+  - name: AIRFLOW__METRICS__STATSD_ON
+    value: "True"
+  - name: AIRFLOW__METRICS__STATSD_HOST
+    value: "prometheus-statsd-exporter.monitoring.svc.cluster.local"
+  - name: AIRFLOW__METRICS__STATSD_PORT
+    value: "9125"
+  - name: AIRFLOW__METRICS__STATSD_PREFIX
+    value: "airflow"
+
+data:
+  metadataConnection:
+    user: airflow
+    pass: airflow123
+    protocol: postgresql
+    host: postgresql.database.svc.cluster.local
+    port: 5432
+    db: airflow
+    sslmode: disable
+
+webserver:
+  replicas: 1
+  service:
+    type: NodePort
+    ports:
+      - name: airflow-ui
+        port: 8080
+        nodePort: 30080
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  defaultUser:
+    enabled: true
+    role: Admin
+    username: admin
+    email: admin@example.com
+    firstName: admin
+    lastName: user
+    password: admin
+
+scheduler:
+  replicas: 1
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+triggerer:
+  enabled: true
+  replicas: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+workers:
+  replicas: 1
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+postgresql:
+  enabled: false
+
+redis:
+  enabled: false
+
+dags:
+  persistence:
+    enabled: false
+  gitSync:
+    enabled: false
+  # Mount local dags folder directly
+  # For Docker Desktop (macOS): /Users/<username>/Projects/AirflowToolkit/airflowtoolkit/dags
+  # For Linux: /home/<username>/Projects/AirflowToolkit/airflowtoolkit/dags
+  # This will be configured via extraVolumes/extraVolumeMounts below
+
+logs:
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClassName: hostpath
+
+config:
+  core:
+    dags_folder: /opt/airflow/dags
+    load_examples: "True"
+  webserver:
+    expose_config: "True"
+    rbac: "True"
+  metrics:
+    statsd_on: "True"
+    statsd_host: prometheus-statsd-exporter.monitoring.svc.cluster.local
+    statsd_port: 9125
+    statsd_prefix: airflow
+  scheduler:
+    file_parsing_sort_mode: "modified_time"
+
+serviceAccount:
+  create: true
+  name: airflow
+
+createUserJob:
+  useHelmHooks: false
+  applyCustomEnv: true
+
+migrateDatabaseJob:
+  useHelmHooks: false
+  applyCustomEnv: true
+
+# Extra environment variables for connections
+extraEnv: |
+  - name: AIRFLOW_CONN_AIRFLOW_METADATA
+    valueFrom:
+      secretKeyRef:
+        name: airflow-connections
+        key: AIRFLOW_CONN_AIRFLOW_METADATA
+  - name: AIRFLOW_CONN_AIRFLOW_EXTENSION
+    valueFrom:
+      secretKeyRef:
+        name: airflow-connections
+        key: AIRFLOW_CONN_AIRFLOW_EXTENSION
+
+# Mount local dags folder
+# NOTE: Update the hostPath based on your OS:
+# - macOS (Docker Desktop): /Users/<username>/Projects/AirflowToolkit/airflowtoolkit/dags
+# - Linux: /home/<username>/Projects/AirflowToolkit/airflowtoolkit/dags
+extraVolumes: |
+  - name: dags
+    hostPath:
+      path: /Users/preedee/Projects/AirflowToolkit/airflowtoolkit/dags
+      type: Directory
+
+extraVolumeMounts: |
+  - name: dags
+    mountPath: /opt/airflow/dags
+    readOnly: false
