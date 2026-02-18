@@ -176,6 +176,17 @@ kubectl delete pod dag-copier -n airflow
 
 echo "✅ Baseline DAG copied successfully"
 
+# Wait for DAG to be parsed (30 seconds)
+echo "Waiting for DAG to be parsed by dag-processor..."
+sleep 30
+
+# Unpause the DAG
+echo "Unpausing baseline_compute_daily DAG..."
+kubectl exec -n airflow deployment/airflow-scheduler -- \
+  airflow dags unpause baseline_compute_daily 2>/dev/null || echo "⚠️  DAG not yet parsed, will be paused by default"
+
+echo "✅ Baseline DAG is ready to use"
+
 echo ""
 echo "=========================================="
 echo "Deployment Complete!"
