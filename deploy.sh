@@ -64,6 +64,7 @@ echo ""
 echo "Step 2: Deploying PostgreSQL..."
 kubectl apply -f k8s/database/postgresql-secret.yaml
 kubectl apply -f "$TMP_DIR/postgresql-pvc.yaml"
+kubectl apply -f k8s/database/airflow-extension-init-configmap.yaml
 kubectl apply -f k8s/database/postgresql-deployment.yaml
 kubectl apply -f k8s/database/postgresql-service.yaml
 

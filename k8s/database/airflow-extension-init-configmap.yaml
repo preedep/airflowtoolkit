@@ -1,0 +1,255 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airflow-extension-init-script
+  namespace: database
+  labels:
+    app: postgresql
+    component: init-script
+data:
+  init-airflow-extension.sql: |
+    -- =====================================================
+    -- Airflow Extension Database Initialization Script
+    -- Purpose: SLA monitoring and performance statistics
+    -- =====================================================
+
+    -- Create airflow_extension database
+    CREATE DATABASE airflow_extension;
+
+    -- Connect to airflow_extension database
+    \c airflow_extension
+
+    -- =====================================================
+    -- Table 1: task_baseline
+    -- Purpose: Store historical performance baselines for tasks
+    -- =====================================================
+    CREATE TABLE IF NOT EXISTS task_baseline (
+      dag_id           text        NOT NULL,
+      task_id          text        NOT NULL,
+      baseline_key     text        NOT NULL DEFAULT 'default',
+      window_days      int         NOT NULL,
+      as_of_date       date        NOT NULL,
+      samples          int         NOT NULL,
+
+      avg_seconds      double precision,
+      p50_seconds      double precision,
+      p90_seconds      double precision,
+      p95_seconds      double precision,
+      p99_seconds      double precision,
+      stddev_seconds   double precision,
+
+      recommended_sla_seconds double precision,
+      updated_at       timestamptz NOT NULL DEFAULT now(),
+
+      PRIMARY KEY (dag_id, task_id, baseline_key, window_days, as_of_date)
+    );
+
+    CREATE INDEX IF NOT EXISTS ix_task_baseline_lookup
+    ON task_baseline(dag_id, task_id, baseline_key, as_of_date DESC);
+
+    COMMENT ON TABLE task_baseline IS 'Historical performance baselines for tasks with percentile statistics';
+    COMMENT ON COLUMN task_baseline.baseline_key IS 'Baseline context: default, eom, month_end, weekday=Mon, etc.';
+    COMMENT ON COLUMN task_baseline.window_days IS 'Number of days used to calculate baseline (e.g., 7, 30, 90)';
+    COMMENT ON COLUMN task_baseline.as_of_date IS 'Date when baseline was calculated';
+    COMMENT ON COLUMN task_baseline.samples IS 'Number of task runs used in calculation';
+    COMMENT ON COLUMN task_baseline.recommended_sla_seconds IS 'Suggested SLA threshold (e.g., p95 + buffer)';
+
+    -- =====================================================
+    -- Table 2: sla_policy
+    -- Purpose: Define SLA policies for tasks
+    -- =====================================================
+    CREATE TABLE IF NOT EXISTS sla_policy (
+      dag_id           text NOT NULL,
+      task_id          text NOT NULL,
+      baseline_key     text NOT NULL DEFAULT 'default',
+
+      mode             text NOT NULL,
+      buffer_seconds   double precision NOT NULL DEFAULT 0,
+      buffer_percent   double precision NOT NULL DEFAULT 0,
+
+      min_sla_seconds  double precision,
+      max_sla_seconds  double precision,
+
+      warn_ratio       double precision NOT NULL DEFAULT 0.85,
+      breach_ratio     double precision NOT NULL DEFAULT 1.00,
+
+      is_enabled       boolean NOT NULL DEFAULT true,
+      updated_at       timestamptz NOT NULL DEFAULT now(),
+
+      PRIMARY KEY (dag_id, task_id, baseline_key)
+    );
+
+    COMMENT ON TABLE sla_policy IS 'SLA policy definitions for tasks with dynamic threshold modes';
+    COMMENT ON COLUMN sla_policy.mode IS 'SLA calculation mode: STATIC (fixed), P95 (use p95), P95_PLUS_BUFFER (p95+buffer), STDDEV (mean+2σ), FORECAST (ML-based)';
+    COMMENT ON COLUMN sla_policy.buffer_seconds IS 'Fixed buffer in seconds to add to baseline';
+    COMMENT ON COLUMN sla_policy.buffer_percent IS 'Percentage buffer (e.g., 0.10 = +10%)';
+    COMMENT ON COLUMN sla_policy.warn_ratio IS 'Warning threshold ratio (default 0.85 = 85% of SLA)';
+    COMMENT ON COLUMN sla_policy.breach_ratio IS 'Breach threshold ratio (default 1.00 = 100% of SLA)';
+
+    -- =====================================================
+    -- Table 3: sla_current_status
+    -- Purpose: Track current SLA status for running/completed tasks
+    -- =====================================================
+    CREATE TABLE IF NOT EXISTS sla_current_status (
+      dag_id        text NOT NULL,
+      task_id       text NOT NULL,
+      baseline_key  text NOT NULL DEFAULT 'default',
+
+      logical_date  timestamptz NOT NULL,
+      run_id        text,
+      state         text,
+      elapsed_seconds double precision,
+
+      computed_sla_seconds double precision,
+      status       text NOT NULL,
+
+      evaluated_at timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (dag_id, task_id, baseline_key, logical_date)
+    );
+
+    CREATE INDEX IF NOT EXISTS ix_sla_current_status_lookup
+    ON sla_current_status(dag_id, task_id, status, evaluated_at DESC);
+
+    CREATE INDEX IF NOT EXISTS ix_sla_current_status_state
+    ON sla_current_status(state, status) WHERE state = 'running';
+
+    COMMENT ON TABLE sla_current_status IS 'Current SLA status for task runs with real-time monitoring';
+    COMMENT ON COLUMN sla_current_status.logical_date IS 'DAG run logical date (execution_date)';
+    COMMENT ON COLUMN sla_current_status.elapsed_seconds IS 'Current elapsed time for task';
+    COMMENT ON COLUMN sla_current_status.computed_sla_seconds IS 'Computed SLA threshold based on policy';
+    COMMENT ON COLUMN sla_current_status.status IS 'SLA status: OK (within SLA), WARN (approaching), BREACH (exceeded), UNKNOWN (no baseline)';
+
+    -- =====================================================
+    -- Table 4: sla_alert_event
+    -- Purpose: Log SLA alert events with deduplication
+    -- =====================================================
+    CREATE TABLE IF NOT EXISTS sla_alert_event (
+      event_id      bigserial PRIMARY KEY,
+      dag_id        text NOT NULL,
+      task_id       text NOT NULL,
+      baseline_key  text NOT NULL DEFAULT 'default',
+      logical_date  timestamptz NOT NULL,
+
+      status        text NOT NULL,
+      message       text NOT NULL,
+      dedup_key     text NOT NULL,
+      sent_to       text,
+      sent_at       timestamptz,
+
+      created_at    timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_sla_alert_dedup
+    ON sla_alert_event(dedup_key);
+
+    CREATE INDEX IF NOT EXISTS ix_sla_alert_event_lookup
+    ON sla_alert_event(dag_id, task_id, created_at DESC);
+
+    CREATE INDEX IF NOT EXISTS ix_sla_alert_event_status
+    ON sla_alert_event(status, created_at DESC);
+
+    COMMENT ON TABLE sla_alert_event IS 'SLA alert event log with deduplication to prevent duplicate notifications';
+    COMMENT ON COLUMN sla_alert_event.dedup_key IS 'Deduplication key format: dag_id|task_id|logical_date|status';
+    COMMENT ON COLUMN sla_alert_event.sent_to IS 'Notification destination (Teams webhook, email address, etc.)';
+    COMMENT ON COLUMN sla_alert_event.sent_at IS 'Timestamp when alert was sent';
+
+    -- =====================================================
+    -- Grant permissions to airflow user
+    -- =====================================================
+    GRANT ALL PRIVILEGES ON DATABASE airflow_extension TO airflow;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO airflow;
+    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO airflow;
+
+    -- =====================================================
+    -- Sample data for testing (optional)
+    -- =====================================================
+
+    INSERT INTO task_baseline (dag_id, task_id, baseline_key, window_days, as_of_date, samples, 
+                               avg_seconds, p50_seconds, p90_seconds, p95_seconds, p99_seconds, 
+                               stddev_seconds, recommended_sla_seconds)
+    VALUES 
+      ('example_dag', 'task_1', 'default', 30, CURRENT_DATE, 100, 
+       120.5, 115.0, 180.0, 200.0, 250.0, 45.2, 240.0),
+      ('example_dag', 'task_2', 'default', 30, CURRENT_DATE, 100, 
+       60.2, 58.0, 85.0, 95.0, 120.0, 20.1, 110.0)
+    ON CONFLICT (dag_id, task_id, baseline_key, window_days, as_of_date) DO NOTHING;
+
+    INSERT INTO sla_policy (dag_id, task_id, baseline_key, mode, buffer_seconds, buffer_percent,
+                            min_sla_seconds, max_sla_seconds, warn_ratio, breach_ratio, is_enabled)
+    VALUES 
+      ('example_dag', 'task_1', 'default', 'P95_PLUS_BUFFER', 30, 0.10, 60, 600, 0.85, 1.00, true),
+      ('example_dag', 'task_2', 'default', 'P95', 0, 0, 30, 300, 0.85, 1.00, true)
+    ON CONFLICT (dag_id, task_id, baseline_key) DO NOTHING;
+
+    -- =====================================================
+    -- Utility Views
+    -- =====================================================
+
+    CREATE OR REPLACE VIEW v_latest_task_baseline AS
+    SELECT DISTINCT ON (dag_id, task_id, baseline_key)
+      dag_id,
+      task_id,
+      baseline_key,
+      window_days,
+      as_of_date,
+      samples,
+      avg_seconds,
+      p50_seconds,
+      p90_seconds,
+      p95_seconds,
+      p99_seconds,
+      stddev_seconds,
+      recommended_sla_seconds,
+      updated_at
+    FROM task_baseline
+    ORDER BY dag_id, task_id, baseline_key, as_of_date DESC;
+
+    COMMENT ON VIEW v_latest_task_baseline IS 'Latest baseline statistics for each task';
+
+    CREATE OR REPLACE VIEW v_active_sla_with_baseline AS
+    SELECT 
+      p.dag_id,
+      p.task_id,
+      p.baseline_key,
+      p.mode,
+      p.buffer_seconds,
+      p.buffer_percent,
+      p.min_sla_seconds,
+      p.max_sla_seconds,
+      p.warn_ratio,
+      p.breach_ratio,
+      p.is_enabled,
+      b.p95_seconds,
+      b.avg_seconds,
+      b.stddev_seconds,
+      b.recommended_sla_seconds,
+      b.samples,
+      b.as_of_date as baseline_date
+    FROM sla_policy p
+    LEFT JOIN v_latest_task_baseline b 
+      ON p.dag_id = b.dag_id 
+      AND p.task_id = b.task_id 
+      AND p.baseline_key = b.baseline_key
+    WHERE p.is_enabled = true;
+
+    COMMENT ON VIEW v_active_sla_with_baseline IS 'Active SLA policies joined with latest baseline statistics';
+
+    CREATE OR REPLACE VIEW v_current_sla_breaches AS
+    SELECT 
+      dag_id,
+      task_id,
+      baseline_key,
+      logical_date,
+      run_id,
+      state,
+      elapsed_seconds,
+      computed_sla_seconds,
+      status,
+      evaluated_at,
+      ROUND((elapsed_seconds / NULLIF(computed_sla_seconds, 0) * 100)::numeric, 2) as sla_usage_percent
+    FROM sla_current_status
+    WHERE status IN ('WARN', 'BREACH')
+      AND state = 'running'
+    ORDER BY evaluated_at DESC;
+
+    COMMENT ON VIEW v_current_sla_breaches IS 'Currently running tasks with SLA warnings or breaches';

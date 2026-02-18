@@ -27,6 +27,9 @@ spec:
         - name: postgresql-storage
           mountPath: /var/lib/postgresql/data
           subPath: postgres
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d/init-airflow-extension.sql
+          subPath: init-airflow-extension.sql
         resources:
           requests:
             memory: "256Mi"
@@ -54,3 +57,6 @@ spec:
       - name: postgresql-storage
         persistentVolumeClaim:
           claimName: postgresql-pvc
+      - name: init-script
+        configMap:
+          name: airflow-extension-init-script

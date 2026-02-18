@@ -26,3 +26,15 @@ data:
           sslmode: disable
           postgresVersion: 1400
         editable: true
+      - name: Airflow Extension
+        type: postgres
+        access: proxy
+        url: postgresql.database.svc.cluster.local:5432
+        database: airflow_extension
+        user: airflow
+        secureJsonData:
+          password: airflow123
+        jsonData:
+          sslmode: disable
+          postgresVersion: 1400
+        editable: true
