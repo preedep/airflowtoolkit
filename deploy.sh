@@ -72,6 +72,13 @@ echo "Waiting for PostgreSQL to be ready..."
 kubectl wait --for=condition=ready pod -l app=postgresql -n database --timeout=300s
 
 echo ""
+echo "Step 2.5: Setting up Foreign Data Wrapper for cross-database queries..."
+kubectl apply -f k8s/database/setup-fdw-configmap.yaml
+kubectl apply -f k8s/database/setup-fdw-job.yaml
+echo "Waiting for FDW setup to complete..."
+kubectl wait --for=condition=complete job/postgresql-fdw-setup -n database --timeout=60s || true
+
+echo ""
 echo "Step 3: Deploying Prometheus and StatsD Exporter..."
 kubectl apply -f k8s/monitoring/prometheus-rbac.yaml
 kubectl apply -f "$TMP_DIR/prometheus-pvc.yaml"

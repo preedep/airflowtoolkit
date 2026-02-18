@@ -1,0 +1,129 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgresql-fdw-setup
+  namespace: database
+data:
+  setup-fdw.sql: |
+    -- Setup Foreign Data Wrapper for cross-database queries
+    -- This allows airflow_extension database to query airflow database
+
+    -- Create postgres_fdw extension
+    CREATE EXTENSION IF NOT EXISTS postgres_fdw;
+
+    -- Create foreign server pointing to airflow database
+    CREATE SERVER IF NOT EXISTS airflow_server
+    FOREIGN DATA WRAPPER postgres_fdw
+    OPTIONS (host 'localhost', port '5432', dbname 'airflow');
+
+    -- Create user mapping
+    DO $$
+    BEGIN
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_user_mappings 
+            WHERE srvname = 'airflow_server' 
+            AND usename = 'airflow'
+        ) THEN
+            CREATE USER MAPPING FOR airflow
+            SERVER airflow_server
+            OPTIONS (user 'airflow', password 'airflow123');
+        END IF;
+    END $$;
+
+    -- Create foreign table for task_instance
+    DROP FOREIGN TABLE IF EXISTS task_instance CASCADE;
+    CREATE FOREIGN TABLE task_instance (
+        task_id VARCHAR(250),
+        dag_id VARCHAR(250),
+        run_id VARCHAR(250),
+        map_index INTEGER,
+        start_date TIMESTAMP,
+        end_date TIMESTAMP,
+        duration DOUBLE PRECISION,
+        state VARCHAR(20),
+        try_number INTEGER,
+        max_tries INTEGER,
+        hostname VARCHAR(1000),
+        unixname VARCHAR(1000),
+        job_id INTEGER,
+        pool VARCHAR(256),
+        pool_slots INTEGER,
+        queue VARCHAR(256),
+        priority_weight INTEGER,
+        operator VARCHAR(1000),
+        queued_dttm TIMESTAMP,
+        queued_by_job_id INTEGER,
+        pid INTEGER,
+        executor_config BYTEA,
+        external_executor_id VARCHAR(250),
+        trigger_id INTEGER,
+        trigger_timeout TIMESTAMP,
+        next_method VARCHAR(1000),
+        next_kwargs JSON,
+        updated_at TIMESTAMP,
+        rendered_map_index VARCHAR(250),
+        custom_operator_name VARCHAR(1000)
+    )
+    SERVER airflow_server
+    OPTIONS (schema_name 'public', table_name 'task_instance');
+
+    -- Create foreign table for dag_run
+    DROP FOREIGN TABLE IF EXISTS dag_run CASCADE;
+    CREATE FOREIGN TABLE dag_run (
+        id INTEGER,
+        dag_id VARCHAR(250),
+        queued_at TIMESTAMP,
+        execution_date TIMESTAMP,
+        start_date TIMESTAMP,
+        end_date TIMESTAMP,
+        state VARCHAR(50),
+        run_id VARCHAR(250),
+        creating_job_id INTEGER,
+        external_trigger BOOLEAN,
+        run_type VARCHAR(50),
+        conf BYTEA,
+        data_interval_start TIMESTAMP,
+        data_interval_end TIMESTAMP,
+        last_scheduling_decision TIMESTAMP,
+        dag_hash VARCHAR(32),
+        log_template_id INTEGER,
+        updated_at TIMESTAMP,
+        clear_number INTEGER,
+        triggered_by VARCHAR(50)
+    )
+    SERVER airflow_server
+    OPTIONS (schema_name 'public', table_name 'dag_run');
+
+    -- Grant permissions
+    GRANT SELECT ON task_instance TO airflow;
+    GRANT SELECT ON dag_run TO airflow;
+
+    -- Create view for easier querying
+    CREATE OR REPLACE VIEW v_task_instance_with_baseline AS
+    SELECT 
+        ti.dag_id,
+        ti.task_id,
+        ti.run_id,
+        ti.start_date,
+        ti.end_date,
+        ti.duration,
+        ti.state,
+        ti.operator,
+        tb.p50_seconds as baseline_p50,
+        tb.p95_seconds as baseline_p95,
+        tb.p99_seconds as baseline_p99,
+        tb.recommended_sla_seconds,
+        CASE 
+            WHEN ti.duration IS NULL THEN NULL
+            WHEN tb.p95_seconds IS NULL THEN NULL
+            ELSE ROUND((ti.duration / NULLIF(tb.p95_seconds, 0))::numeric, 2)
+        END as sla_ratio
+    FROM task_instance ti
+    LEFT JOIN task_baseline tb 
+        ON ti.dag_id = tb.dag_id 
+        AND ti.task_id = tb.task_id
+        AND tb.baseline_key = 'default'
+    WHERE ti.start_date >= NOW() - INTERVAL '30 days';
+
+    COMMENT ON VIEW v_task_instance_with_baseline IS 
+    'Combines task_instance from airflow database with task_baseline for SLA monitoring';

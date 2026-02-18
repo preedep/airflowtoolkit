@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgresql-fdw-setup
+  namespace: database
+spec:
+  ttlSecondsAfterFinished: 100
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: setup-fdw
+        image: postgres:15
+        command:
+        - /bin/bash
+        - -c
+        - |
+          echo "Waiting for PostgreSQL to be ready..."
+          until pg_isready -h postgresql -U airflow -d airflow_extension; do
+            sleep 2
+          done
+          echo "PostgreSQL is ready. Setting up Foreign Data Wrapper..."
+          psql -h postgresql -U airflow -d airflow_extension -f /scripts/setup-fdw.sql
+          echo "Foreign Data Wrapper setup complete!"
+        env:
+        - name: PGPASSWORD
+          value: "airflow123"
+        volumeMounts:
+        - name: fdw-scripts
+          mountPath: /scripts
+      volumes:
+      - name: fdw-scripts
+        configMap:
+          name: postgresql-fdw-setup
