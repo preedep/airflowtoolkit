@@ -138,6 +138,45 @@ echo "Step 8: Exposing Airflow UI via NodePort..."
 kubectl apply -f k8s/airflow/api-server-nodeport.yaml
 
 echo ""
+echo "Step 9: Copying Baseline DAG to Airflow DAGs volume..."
+# Create temporary pod to copy DAG file to PVC
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dag-copier
+  namespace: airflow
+spec:
+  restartPolicy: Never
+  containers:
+  - name: copier
+    image: busybox:latest
+    command: ['sh', '-c', 'sleep 60']
+    volumeMounts:
+    - name: dags
+      mountPath: /opt/airflow/dags
+  volumes:
+  - name: dags
+    persistentVolumeClaim:
+      claimName: airflow-dags
+EOF
+
+# Wait for pod to be ready
+kubectl wait --for=condition=ready pod/dag-copier -n airflow --timeout=60s
+
+# Copy DAG file
+kubectl cp dags/baseline_compute_daily.py airflow/dag-copier:/opt/airflow/dags/baseline_compute_daily.py
+
+# Verify copy
+echo "Verifying DAG file..."
+kubectl exec -n airflow dag-copier -- ls -la /opt/airflow/dags/baseline_compute_daily.py
+
+# Delete temporary pod
+kubectl delete pod dag-copier -n airflow
+
+echo "✅ Baseline DAG copied successfully"
+
+echo ""
 echo "=========================================="
 echo "Deployment Complete!"
 echo "=========================================="
