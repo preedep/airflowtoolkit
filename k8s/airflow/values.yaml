@@ -93,18 +93,12 @@ redis:
 
 dags:
   persistence:
-    enabled: false
-  gitSync:
     enabled: true
-    repo: https://github.com/preedep/airflowtoolkit.git
-    branch: develop
-    rev: HEAD
-    depth: 1
-    maxFailures: 0
-    subPath: "dags"
-    wait: 60
-    containerName: git-sync
-    uid: 65533
+    size: 1Gi
+    storageClassName: hostpath
+    accessMode: ReadWriteMany
+  gitSync:
+    enabled: false
 
 logs:
   persistence:
