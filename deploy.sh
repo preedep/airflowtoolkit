@@ -138,56 +138,6 @@ echo "Step 8: Exposing Airflow UI via NodePort..."
 kubectl apply -f k8s/airflow/api-server-nodeport.yaml
 
 echo ""
-echo "Step 9: Copying Baseline DAG to Airflow DAGs volume..."
-# Create temporary pod to copy DAG file to PVC
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: dag-copier
-  namespace: airflow
-spec:
-  restartPolicy: Never
-  containers:
-  - name: copier
-    image: busybox:latest
-    command: ['sh', '-c', 'sleep 60']
-    volumeMounts:
-    - name: dags
-      mountPath: /opt/airflow/dags
-  volumes:
-  - name: dags
-    persistentVolumeClaim:
-      claimName: airflow-dags
-EOF
-
-# Wait for pod to be ready
-kubectl wait --for=condition=ready pod/dag-copier -n airflow --timeout=60s
-
-# Copy DAG file
-kubectl cp dags/baseline_compute_daily.py airflow/dag-copier:/opt/airflow/dags/baseline_compute_daily.py
-
-# Verify copy
-echo "Verifying DAG file..."
-kubectl exec -n airflow dag-copier -- ls -la /opt/airflow/dags/baseline_compute_daily.py
-
-# Delete temporary pod
-kubectl delete pod dag-copier -n airflow
-
-echo "✅ Baseline DAG copied successfully"
-
-# Wait for DAG to be parsed (30 seconds)
-echo "Waiting for DAG to be parsed by dag-processor..."
-sleep 30
-
-# Unpause the DAG
-echo "Unpausing baseline_compute_daily DAG..."
-kubectl exec -n airflow deployment/airflow-scheduler -- \
-  airflow dags unpause baseline_compute_daily 2>/dev/null || echo "⚠️  DAG not yet parsed, will be paused by default"
-
-echo "✅ Baseline DAG is ready to use"
-
-echo ""
 echo "=========================================="
 echo "Deployment Complete!"
 echo "=========================================="
@@ -205,6 +155,10 @@ echo "📊 Airflow Example DAGs:"
 echo "  Airflow is configured with load_examples=True"
 echo "  You will see 30+ example DAGs in the UI"
 echo "  These DAGs will generate metrics for Grafana dashboard"
+echo ""
+echo "📋 To deploy Baseline Computation DAG:"
+echo "  Run: ./copy_dag.sh"
+echo "  This will copy baseline_compute_daily DAG to Airflow"
 echo ""
 echo "📝 Useful Commands:"
 echo "  kubectl get pods -n airflow"
