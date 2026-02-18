@@ -211,7 +211,7 @@ data:
               "group": [],
               "metricColumn": "none",
               "rawQuery": true,
-              "rawSql": "SELECT COUNT(*) as sla_violations\nFROM (\n  SELECT \n    ti.dag_id,\n    ti.task_id,\n    ti.duration as actual_duration,\n    tb.p95_seconds\n  FROM task_instance ti\n  JOIN airflow_extension.task_baseline tb \n    ON ti.dag_id = tb.dag_id \n    AND ti.task_id = tb.task_id\n  WHERE ti.start_date >= NOW() - INTERVAL '24 hours'\n    AND ti.state = 'success'\n    AND ti.duration IS NOT NULL\n    AND ti.duration > tb.p95_seconds\n) t;",
+              "rawSql": "SELECT COUNT(*) as sla_violations\nFROM (\n  SELECT \n    ti.dag_id,\n    ti.task_id,\n    ti.duration as actual_duration,\n    tb.p95_seconds\n  FROM task_instance ti\n  JOIN task_baseline tb \n    ON ti.dag_id = tb.dag_id \n    AND ti.task_id = tb.task_id\n    AND tb.baseline_key = 'default'\n  WHERE ti.start_date >= NOW() - INTERVAL '24 hours'\n    AND ti.state = 'success'\n    AND ti.duration IS NOT NULL\n    AND ti.duration > tb.p95_seconds\n) t;",
               "refId": "A"
             }
           ],
@@ -272,7 +272,7 @@ data:
               "group": [],
               "metricColumn": "none",
               "rawQuery": true,
-              "rawSql": "SELECT COUNT(*) as at_risk_tasks\nFROM (\n  SELECT \n    ti.dag_id,\n    ti.task_id,\n    ti.duration as actual_duration,\n    tb.p95_seconds\n  FROM task_instance ti\n  JOIN airflow_extension.task_baseline tb \n    ON ti.dag_id = tb.dag_id \n    AND ti.task_id = tb.task_id\n  WHERE ti.state = 'running'\n    AND ti.start_date IS NOT NULL\n    AND (EXTRACT(EPOCH FROM (NOW() - ti.start_date))) > (tb.p95_seconds * 0.8)\n    AND (EXTRACT(EPOCH FROM (NOW() - ti.start_date))) <= tb.p95_seconds\n) t;",
+              "rawSql": "SELECT COUNT(*) as at_risk_tasks\nFROM (\n  SELECT \n    ti.dag_id,\n    ti.task_id,\n    ti.duration as actual_duration,\n    tb.p95_seconds\n  FROM task_instance ti\n  JOIN task_baseline tb \n    ON ti.dag_id = tb.dag_id \n    AND ti.task_id = tb.task_id\n  WHERE ti.state = 'running'\n    AND ti.start_date IS NOT NULL\n    AND (EXTRACT(EPOCH FROM (NOW() - ti.start_date))) > (tb.p95_seconds * 0.8)\n    AND (EXTRACT(EPOCH FROM (NOW() - ti.start_date))) <= tb.p95_seconds\n) t;",
               "refId": "A"
             }
           ],
@@ -350,7 +350,7 @@ data:
               "group": [],
               "metricColumn": "none",
               "rawQuery": true,
-              "rawSql": "SELECT \n  DATE_TRUNC('hour', ti.start_date) as time,\n  ROUND(\n    (COUNT(*) FILTER (WHERE ti.duration <= tb.p95_seconds) * 100.0) / NULLIF(COUNT(*), 0),\n    2\n  ) as \"SLA Compliance %\"\nFROM task_instance ti\nJOIN airflow_extension.task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '7 days'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\nGROUP BY DATE_TRUNC('hour', ti.start_date)\nORDER BY time;",
+              "rawSql": "SELECT \n  DATE_TRUNC('hour', ti.start_date) as time,\n  ROUND(\n    (COUNT(*) FILTER (WHERE ti.duration <= tb.p95_seconds) * 100.0) / NULLIF(COUNT(*), 0),\n    2\n  ) as \"SLA Compliance %\"\nFROM task_instance ti\nJOIN task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '7 days'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\nGROUP BY DATE_TRUNC('hour', ti.start_date)\nORDER BY time;",
               "refId": "A",
               "select": [
                 [
@@ -444,7 +444,7 @@ data:
               "group": [],
               "metricColumn": "none",
               "rawQuery": true,
-              "rawSql": "SELECT \n  DATE_TRUNC('hour', ti.start_date) as time,\n  AVG(ti.duration) as \"Actual Duration\",\n  AVG(tb.p50_seconds) as \"Baseline P50\",\n  AVG(tb.p95_seconds) as \"Baseline P95 (SLA)\"\nFROM task_instance ti\nJOIN airflow_extension.task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '7 days'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\nGROUP BY DATE_TRUNC('hour', ti.start_date)\nORDER BY time;",
+              "rawSql": "SELECT \n  DATE_TRUNC('hour', ti.start_date) as time,\n  AVG(ti.duration) as \"Actual Duration\",\n  AVG(tb.p50_seconds) as \"Baseline P50\",\n  AVG(tb.p95_seconds) as \"Baseline P95 (SLA)\"\nFROM task_instance ti\nJOIN task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '7 days'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\nGROUP BY DATE_TRUNC('hour', ti.start_date)\nORDER BY time;",
               "refId": "A"
             }
           ],
@@ -587,7 +587,7 @@ data:
               "group": [],
               "metricColumn": "none",
               "rawQuery": true,
-              "rawSql": "SELECT \n  ti.dag_id as \"DAG ID\",\n  ti.task_id as \"Task ID\",\n  ti.state as \"State\",\n  ROUND(EXTRACT(EPOCH FROM (NOW() - ti.start_date)), 2) as \"Running Time (s)\",\n  ROUND(tb.p95_seconds, 2) as \"Baseline P95 (s)\",\n  ROUND(\n    EXTRACT(EPOCH FROM (NOW() - ti.start_date)) / NULLIF(tb.p95_seconds, 0),\n    2\n  ) as \"SLA Ratio\"\nFROM task_instance ti\nJOIN airflow_extension.task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.state = 'running'\n  AND ti.start_date IS NOT NULL\nORDER BY \"SLA Ratio\" DESC\nLIMIT 20;",
+              "rawSql": "SELECT \n  ti.dag_id as \"DAG ID\",\n  ti.task_id as \"Task ID\",\n  ti.state as \"State\",\n  ROUND(EXTRACT(EPOCH FROM (NOW() - ti.start_date)), 2) as \"Running Time (s)\",\n  ROUND(tb.p95_seconds, 2) as \"Baseline P95 (s)\",\n  ROUND(\n    EXTRACT(EPOCH FROM (NOW() - ti.start_date)) / NULLIF(tb.p95_seconds, 0),\n    2\n  ) as \"SLA Ratio\"\nFROM task_instance ti\nJOIN task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.state = 'running'\n  AND ti.start_date IS NOT NULL\nORDER BY \"SLA Ratio\" DESC\nLIMIT 20;",
               "refId": "A"
             }
           ],
@@ -678,7 +678,7 @@ data:
               "group": [],
               "metricColumn": "none",
               "rawQuery": true,
-              "rawSql": "SELECT \n  ti.dag_id as \"DAG ID\",\n  ti.task_id as \"Task ID\",\n  ti.start_date as \"Start Time\",\n  ROUND(ti.duration, 2) as \"Actual Duration (s)\",\n  ROUND(tb.p95_seconds, 2) as \"Baseline P95 (s)\",\n  ROUND(\n    ((ti.duration - tb.p95_seconds) / NULLIF(tb.p95_seconds, 0)) * 100,\n    2\n  ) as \"Violation %\",\n  ti.end_date as \"End Time\"\nFROM task_instance ti\nJOIN airflow_extension.task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '24 hours'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\n  AND ti.duration > tb.p95_seconds\nORDER BY ti.start_date DESC\nLIMIT 20;",
+              "rawSql": "SELECT \n  ti.dag_id as \"DAG ID\",\n  ti.task_id as \"Task ID\",\n  ti.start_date as \"Start Time\",\n  ROUND(ti.duration, 2) as \"Actual Duration (s)\",\n  ROUND(tb.p95_seconds, 2) as \"Baseline P95 (s)\",\n  ROUND(\n    ((ti.duration - tb.p95_seconds) / NULLIF(tb.p95_seconds, 0)) * 100,\n    2\n  ) as \"Violation %\",\n  ti.end_date as \"End Time\"\nFROM task_instance ti\nJOIN task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '24 hours'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\n  AND ti.duration > tb.p95_seconds\nORDER BY ti.start_date DESC\nLIMIT 20;",
               "refId": "A"
             }
           ],
@@ -743,7 +743,7 @@ data:
               "group": [],
               "metricColumn": "none",
               "rawQuery": true,
-              "rawSql": "SELECT \n  ti.dag_id as \"DAG ID\",\n  ti.task_id as \"Task ID\",\n  COUNT(*) as \"Occurrences\",\n  ROUND(AVG(ti.duration), 2) as \"Avg Actual (s)\",\n  ROUND(AVG(tb.p95_seconds), 2) as \"Baseline P95 (s)\",\n  ROUND(\n    AVG(ti.duration) / NULLIF(AVG(tb.p95_seconds), 0),\n    2\n  ) as \"Slowdown Factor\"\nFROM task_instance ti\nJOIN airflow_extension.task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '7 days'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\n  AND ti.duration > tb.p95_seconds\nGROUP BY ti.dag_id, ti.task_id\nORDER BY \"Slowdown Factor\" DESC\nLIMIT 10;",
+              "rawSql": "SELECT \n  ti.dag_id as \"DAG ID\",\n  ti.task_id as \"Task ID\",\n  COUNT(*) as \"Occurrences\",\n  ROUND(AVG(ti.duration), 2) as \"Avg Actual (s)\",\n  ROUND(AVG(tb.p95_seconds), 2) as \"Baseline P95 (s)\",\n  ROUND(\n    AVG(ti.duration) / NULLIF(AVG(tb.p95_seconds), 0),\n    2\n  ) as \"Slowdown Factor\"\nFROM task_instance ti\nJOIN task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '7 days'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\n  AND ti.duration > tb.p95_seconds\nGROUP BY ti.dag_id, ti.task_id\nORDER BY \"Slowdown Factor\" DESC\nLIMIT 10;",
               "refId": "A"
             }
           ],
@@ -812,7 +812,7 @@ data:
               "group": [],
               "metricColumn": "none",
               "rawQuery": true,
-              "rawSql": "SELECT \n  EXTRACT(HOUR FROM ti.start_date) as \"Hour\",\n  COUNT(*) FILTER (WHERE ti.duration > tb.p95_seconds) as \"Violations\"\nFROM task_instance ti\nJOIN airflow_extension.task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '7 days'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\nGROUP BY EXTRACT(HOUR FROM ti.start_date)\nORDER BY \"Hour\";",
+              "rawSql": "SELECT \n  EXTRACT(HOUR FROM ti.start_date) as \"Hour\",\n  COUNT(*) FILTER (WHERE ti.duration > tb.p95_seconds) as \"Violations\"\nFROM task_instance ti\nJOIN task_baseline tb \n  ON ti.dag_id = tb.dag_id \n  AND ti.task_id = tb.task_id\nWHERE ti.start_date >= NOW() - INTERVAL '7 days'\n  AND ti.state = 'success'\n  AND ti.duration IS NOT NULL\nGROUP BY EXTRACT(HOUR FROM ti.start_date)\nORDER BY \"Hour\";",
               "refId": "A"
             }
           ],
