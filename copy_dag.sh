@@ -24,44 +24,39 @@ if [ ! -f "dags/baseline_compute_daily.py" ]; then
     exit 1
 fi
 
-echo "📦 Creating temporary pod to copy DAG file..."
+echo "📋 Copying DAG file to all Airflow components..."
+echo ""
 
-# Delete existing dag-copier pod if exists
-kubectl delete pod dag-copier -n airflow 2>/dev/null || true
+# Get all relevant pods
+SCHEDULER_PODS=$(kubectl get pods -n airflow -l component=scheduler -o jsonpath='{.items[*].metadata.name}')
+DAG_PROCESSOR_PODS=$(kubectl get pods -n airflow -l component=dag-processor -o jsonpath='{.items[*].metadata.name}')
+WEBSERVER_PODS=$(kubectl get pods -n airflow -l component=webserver -o jsonpath='{.items[*].metadata.name}')
 
-# Create temporary pod
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: dag-copier
-  namespace: airflow
-spec:
-  restartPolicy: Never
-  containers:
-  - name: copier
-    image: busybox:latest
-    command: ['sh', '-c', 'sleep 120']
-    volumeMounts:
-    - name: dags
-      mountPath: /opt/airflow/dags
-  volumes:
-  - name: dags
-    persistentVolumeClaim:
-      claimName: airflow-dags
-EOF
+# Copy to scheduler pods
+for POD in $SCHEDULER_PODS; do
+    echo "📦 Copying to scheduler pod: $POD"
+    kubectl cp dags/baseline_compute_daily.py airflow/$POD:/opt/airflow/dags/baseline_compute_daily.py -c scheduler
+    echo "✅ Copied to $POD"
+done
 
-echo "⏳ Waiting for pod to be ready..."
-kubectl wait --for=condition=ready pod/dag-copier -n airflow --timeout=60s
+# Copy to dag-processor pods
+for POD in $DAG_PROCESSOR_PODS; do
+    echo "📦 Copying to dag-processor pod: $POD"
+    kubectl cp dags/baseline_compute_daily.py airflow/$POD:/opt/airflow/dags/baseline_compute_daily.py -c dag-processor
+    echo "✅ Copied to $POD"
+done
 
-echo "📋 Copying DAG file to Airflow dags volume..."
-kubectl cp dags/baseline_compute_daily.py airflow/dag-copier:/opt/airflow/dags/baseline_compute_daily.py
+# Copy to webserver pods
+for POD in $WEBSERVER_PODS; do
+    echo "📦 Copying to webserver pod: $POD"
+    kubectl cp dags/baseline_compute_daily.py airflow/$POD:/opt/airflow/dags/baseline_compute_daily.py -c webserver
+    echo "✅ Copied to $POD"
+done
 
-echo "✅ Verifying DAG file..."
-kubectl exec -n airflow dag-copier -- ls -la /opt/airflow/dags/baseline_compute_daily.py
-
-echo "🧹 Cleaning up temporary pod..."
-kubectl delete pod dag-copier -n airflow
+echo ""
+echo "✅ Verifying DAG file in scheduler..."
+FIRST_SCHEDULER=$(echo $SCHEDULER_PODS | awk '{print $1}')
+kubectl exec -n airflow $FIRST_SCHEDULER -c scheduler -- ls -la /opt/airflow/dags/baseline_compute_daily.py
 
 echo ""
 echo "✅ DAG file copied successfully!"
