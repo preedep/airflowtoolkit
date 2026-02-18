@@ -35,21 +35,6 @@ EXT_CONN_ID = "airflow_extension"  # Airflow extension database (same instance)
         "retries": 2,
         "retry_delay": timedelta(minutes=5),
         "execution_timeout": timedelta(minutes=10),
-        "executor_config": {
-            "pod_override": {
-                "spec": {
-                    "containers": [
-                        {
-                            "name": "base",
-                            "resources": {
-                                "requests": {"memory": "512Mi", "cpu": "500m"},
-                                "limits": {"memory": "1Gi", "cpu": "1000m"}
-                            }
-                        }
-                    ]
-                }
-            }
-        },
     },
 )
 def baseline_compute_daily():
