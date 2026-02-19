@@ -2205,6 +2205,486 @@ Grafana Table Panel แสดงเป็นตารางแนวตั้ง
 
 ---
 
+### 🔟 Airflow SLA & Baseline Monitoring Dashboard
+
+**วัตถุประสงค์**: ติดตาม SLA compliance และเปรียบเทียบ actual performance กับ baseline statistics เพื่อ detect performance degradation และ SLA violations
+
+**Data Sources**: 
+- **Airflow Extension PostgreSQL** - `task_baseline` table (baseline statistics)
+- **Airflow PostgreSQL** - `task_instance` table (actual execution data)
+
+**เหตุผลในการใช้ Baseline Monitoring**:
+- **Proactive Detection**: ตรวจจับ performance issues ก่อนที่จะกลายเป็นปัญหาใหญ่
+- **Data-Driven SLA**: ใช้ statistical baseline (P95) แทนการตั้ง SLA แบบ arbitrary
+- **Trend Analysis**: เปรียบเทียบ actual vs baseline เพื่อเห็น performance trends
+- **Capacity Planning**: ใช้ baseline data วางแผน resource allocation
+
+**Architecture**:
+```
+baseline_compute_daily DAG (รันทุก 5 นาที)
+    ↓
+Extract task history (14 days)
+    ↓
+Compute percentiles (P50, P90, P95, P99)
+    ↓
+Store in task_baseline table
+    ↓
+Dashboard queries JOIN task_instance + task_baseline
+```
+
+---
+
+#### 📊 Panels และ SQL Queries
+
+**1. SLA Compliance Rate**
+```sql
+SELECT 
+  ROUND(
+    ((COUNT(*) FILTER (WHERE actual_duration <= p95_seconds) * 100.0) / NULLIF(COUNT(*), 0))::numeric,
+    2
+  ) as sla_compliance_rate
+FROM (
+  SELECT 
+    ti.dag_id,
+    ti.task_id,
+    ti.duration as actual_duration,
+    tb.p95_seconds
+  FROM task_instance ti
+  JOIN task_baseline tb 
+    ON ti.dag_id = tb.dag_id 
+    AND ti.task_id = tb.task_id
+    AND tb.baseline_key = 'default'
+  WHERE ti.start_date BETWEEN $__timeFrom() AND $__timeTo()
+    AND ti.state = 'success'
+    AND ti.duration IS NOT NULL
+) t;
+```
+
+**คำอธิบาย**:
+- **`COUNT(*) FILTER (WHERE actual_duration <= p95_seconds)`**: นับ tasks ที่รันเสร็จภายใน P95 baseline (ถือว่า meet SLA)
+- **`p95_seconds`**: Baseline P95 จาก `task_baseline` table (คำนวณจาก 14 วันย้อนหลัง)
+- **`baseline_key = 'default'`**: Filter baseline context (รองรับหลาย baseline contexts)
+- **`$__timeFrom()` และ `$__timeTo()`**: Grafana time range variables (dynamic time selection)
+- **ความสำคัญ**: **Primary SLA metric** - วัดว่ากี่ % ของ tasks ที่ meet SLA target
+
+**Business Value**:
+- SLA compliance > 95% = ระบบทำงานตาม expectation
+- SLA compliance < 90% = มี performance issues ต้องแก้ไขด่วน
+- Trend analysis: ถ้า compliance ลดลงเรื่อยๆ แสดงว่ามี degradation
+
+---
+
+**2. Total Tasks**
+```sql
+SELECT COUNT(*) as total_tasks
+FROM task_instance
+WHERE start_date BETWEEN $__timeFrom() AND $__timeTo()
+  AND state IN ('success', 'failed', 'running');
+```
+
+**คำอธิบาย**:
+- นับจำนวน tasks ทั้งหมดที่รันใน time range ที่เลือก
+- รวมทั้ง success, failed, และ running states
+- ใช้เป็น denominator สำหรับคำนวณ percentages
+
+---
+
+**3. SLA Violations**
+```sql
+SELECT COUNT(*) as sla_violations
+FROM (
+  SELECT 
+    ti.dag_id,
+    ti.task_id,
+    ti.duration as actual_duration,
+    tb.p95_seconds
+  FROM task_instance ti
+  JOIN task_baseline tb 
+    ON ti.dag_id = tb.dag_id 
+    AND ti.task_id = tb.task_id
+    AND tb.baseline_key = 'default'
+  WHERE ti.start_date BETWEEN $__timeFrom() AND $__timeTo()
+    AND ti.state = 'success'
+    AND ti.duration IS NOT NULL
+    AND ti.duration > tb.p95_seconds
+) t;
+```
+
+**คำอธิบาย**:
+- **`ti.duration > tb.p95_seconds`**: Tasks ที่รันช้ากว่า P95 baseline (SLA violation)
+- **ความสำคัญ**: **Alert trigger metric** - ใช้ตั้ง alert เมื่อ violations เกิน threshold
+
+**Business Value**:
+- Violations = 0: Perfect performance
+- Violations < 5% of total: Acceptable (อยู่ใน P95 definition)
+- Violations > 10%: Performance degradation ต้องสอบสวน
+
+---
+
+**4. At Risk Tasks (>80% baseline)**
+```sql
+SELECT COUNT(*) as at_risk_tasks
+FROM (
+  SELECT 
+    ti.dag_id,
+    ti.task_id,
+    ti.duration as actual_duration,
+    tb.p95_seconds
+  FROM task_instance ti
+  JOIN task_baseline tb 
+    ON ti.dag_id = tb.dag_id 
+    AND ti.task_id = tb.task_id
+    AND tb.baseline_key = 'default'
+  WHERE ti.state = 'running'
+    AND ti.start_date IS NOT NULL
+    AND (EXTRACT(EPOCH FROM (NOW() - ti.start_date))) > (tb.p95_seconds * 0.8)
+    AND (EXTRACT(EPOCH FROM (NOW() - ti.start_date))) <= tb.p95_seconds
+) t;
+```
+
+**คำอธิบาย**:
+- **`EXTRACT(EPOCH FROM (NOW() - ti.start_date))`**: Running time ของ task ที่กำลังรันอยู่
+- **`> (tb.p95_seconds * 0.8)`**: Tasks ที่รันไปแล้ว > 80% ของ baseline
+- **`<= tb.p95_seconds`**: แต่ยังไม่เกิน P95 (ยังไม่ violate แต่ใกล้แล้ว)
+- **ความสำคัญ**: **Early warning metric** - tasks ที่กำลังจะ violate SLA
+
+**Business Value**:
+- Proactive monitoring: แจ้งเตือนก่อน SLA violation เกิดขึ้น
+- ให้เวลา operations team แก้ไขปัญหาทันเวลา
+
+---
+
+**5. SLA Compliance Trend**
+```sql
+SELECT 
+  DATE_TRUNC('hour', ti.start_date) as time,
+  ROUND(
+    ((COUNT(*) FILTER (WHERE ti.duration <= tb.p95_seconds) * 100.0) / NULLIF(COUNT(*), 0))::numeric,
+    2
+  ) as "SLA Compliance %"
+FROM task_instance ti
+JOIN task_baseline tb 
+  ON ti.dag_id = tb.dag_id 
+  AND ti.task_id = tb.task_id
+  AND tb.baseline_key = 'default'
+WHERE ti.start_date BETWEEN $__timeFrom() AND $__timeTo()
+  AND ti.state = 'success'
+  AND ti.duration IS NOT NULL
+GROUP BY DATE_TRUNC('hour', ti.start_date)
+ORDER BY time;
+```
+
+**คำอธิบาย**:
+- **`DATE_TRUNC('hour', ti.start_date)`**: Group by hour สำหรับ time series
+- **`ROUND(...::numeric, 2)`**: Cast เป็น numeric ก่อน round (PostgreSQL requirement)
+- **ความสำคัญ**: **Trend analysis** - เห็น SLA compliance เปลี่ยนแปลงตามเวลา
+
+**Business Value**:
+- Identify peak hours ที่มี SLA violations สูง
+- Detect performance degradation trends
+- Validate optimization efforts (ดู compliance เพิ่มขึ้นหลัง optimize)
+
+---
+
+**6. Task Duration Distribution**
+```sql
+SELECT 
+  CASE 
+    WHEN ti.duration <= tb.p50_seconds THEN 'Fast (≤P50)'
+    WHEN ti.duration <= tb.p95_seconds THEN 'Normal (P50-P95)'
+    ELSE 'Slow (>P95)'
+  END as "Performance Category",
+  COUNT(*) as "Task Count"
+FROM task_instance ti
+JOIN task_baseline tb 
+  ON ti.dag_id = tb.dag_id 
+  AND ti.task_id = tb.task_id
+  AND tb.baseline_key = 'default'
+WHERE ti.start_date BETWEEN $__timeFrom() AND $__timeTo()
+  AND ti.state = 'success'
+  AND ti.duration IS NOT NULL
+GROUP BY "Performance Category"
+ORDER BY "Task Count" DESC;
+```
+
+**คำอธิบาย**:
+- **`CASE WHEN`**: Categorize tasks เป็น 3 กลุ่ม (Fast, Normal, Slow)
+- **`p50_seconds`**: Median baseline (50th percentile)
+- **`p95_seconds`**: SLA threshold (95th percentile)
+- **ความสำคัญ**: **Distribution analysis** - เห็นภาพรวม performance distribution
+
+**Business Value**:
+- Healthy distribution: ส่วนใหญ่อยู่ใน Fast/Normal, มี Slow น้อย
+- Unhealthy distribution: มี Slow tasks เยอะ = performance issues
+
+---
+
+**7. Current Running Tasks (SLA Monitor)**
+```sql
+SELECT 
+  ti.dag_id as "DAG ID",
+  ti.task_id as "Task ID",
+  ti.state as "State",
+  ROUND(EXTRACT(EPOCH FROM (NOW() - ti.start_date))::numeric, 2) as "Running Time (s)",
+  ROUND(tb.p95_seconds::numeric, 2) as "Baseline P95 (s)",
+  ROUND(
+    (EXTRACT(EPOCH FROM (NOW() - ti.start_date)) / NULLIF(tb.p95_seconds, 0))::numeric,
+    2
+  ) as "SLA Ratio"
+FROM task_instance ti
+JOIN task_baseline tb 
+  ON ti.dag_id = tb.dag_id 
+  AND ti.task_id = tb.task_id
+  AND tb.baseline_key = 'default'
+WHERE ti.state = 'running'
+  AND ti.start_date IS NOT NULL
+ORDER BY "SLA Ratio" DESC
+LIMIT 20;
+```
+
+**คำอธิบาย**:
+- **`EXTRACT(EPOCH FROM (NOW() - ti.start_date))`**: Running time ในหน่วยวินาที
+- **`SLA Ratio`**: Running time / P95 baseline (> 1.0 = violating SLA)
+- **`ORDER BY "SLA Ratio" DESC`**: แสดง tasks ที่ใกล้ violate หรือ violate แล้วก่อน
+- **ความสำคัญ**: **Real-time monitoring** - ดู tasks ที่กำลังรันและอาจ violate SLA
+
+**Business Value**:
+- Real-time visibility: เห็น tasks ที่กำลังมีปัญหา
+- Proactive intervention: แก้ไขปัญหาก่อน task fail หรือ impact downstream
+
+---
+
+**8. Recent SLA Violations**
+```sql
+SELECT 
+  ti.dag_id as "DAG ID",
+  ti.task_id as "Task ID",
+  ti.start_date as "Start Time",
+  ROUND(ti.duration::numeric, 2) as "Actual Duration (s)",
+  ROUND(tb.p95_seconds::numeric, 2) as "Baseline P95 (s)",
+  ROUND(
+    (((ti.duration - tb.p95_seconds) / NULLIF(tb.p95_seconds, 0)) * 100)::numeric,
+    2
+  ) as "Violation %",
+  ti.end_date as "End Time"
+FROM task_instance ti
+JOIN task_baseline tb 
+  ON ti.dag_id = tb.dag_id 
+  AND ti.task_id = tb.task_id
+  AND tb.baseline_key = 'default'
+WHERE ti.start_date BETWEEN $__timeFrom() AND $__timeTo()
+  AND ti.state = 'success'
+  AND ti.duration IS NOT NULL
+  AND ti.duration > tb.p95_seconds
+ORDER BY ti.start_date DESC
+LIMIT 20;
+```
+
+**คำอธิบาย**:
+- **`Violation %`**: เกินกว่า baseline กี่ % (เช่น 150% = ช้ากว่า baseline 1.5 เท่า)
+- **`ORDER BY ti.start_date DESC`**: แสดง violations ล่าสุดก่อน
+- **ความสำคัญ**: **Incident tracking** - ดู violations ที่เกิดขึ้นล่าสุดเพื่อสอบสวน
+
+**Business Value**:
+- Root cause analysis: ดู pattern ของ violations (DAG/task ไหนมีปัญหาบ่อย)
+- Impact assessment: ดู severity ของ violations (violation % สูง = impact มาก)
+
+---
+
+**9. Top 10 Slowest Tasks (vs Baseline)**
+```sql
+SELECT 
+  ti.dag_id as "DAG ID",
+  ti.task_id as "Task ID",
+  COUNT(*) as "Occurrences",
+  ROUND(AVG(ti.duration)::numeric, 2) as "Avg Actual (s)",
+  ROUND(AVG(tb.p95_seconds)::numeric, 2) as "Baseline P95 (s)",
+  ROUND(
+    (AVG(ti.duration) / NULLIF(AVG(tb.p95_seconds), 0))::numeric,
+    2
+  ) as "Slowdown Factor"
+FROM task_instance ti
+JOIN task_baseline tb 
+  ON ti.dag_id = tb.dag_id 
+  AND ti.task_id = tb.task_id
+  AND tb.baseline_key = 'default'
+WHERE ti.start_date BETWEEN $__timeFrom() AND $__timeTo()
+  AND ti.state = 'success'
+  AND ti.duration IS NOT NULL
+  AND ti.duration > tb.p95_seconds
+GROUP BY ti.dag_id, ti.task_id
+ORDER BY "Slowdown Factor" DESC
+LIMIT 10;
+```
+
+**คำอธิบาย**:
+- **`Slowdown Factor`**: Avg actual / Avg baseline (2.0 = ช้ากว่า baseline 2 เท่า)
+- **`Occurrences`**: จำนวนครั้งที่ task นี้ violate SLA
+- **ความสำคัญ**: **Optimization prioritization** - tasks ไหนควร optimize ก่อน
+
+**Business Value**:
+- Prioritize optimization: Focus ที่ tasks ที่มี slowdown factor สูงและ occurrences เยอะ
+- ROI calculation: Tasks ที่ช้ามากและรันบ่อย = high impact optimization
+
+---
+
+**10. Baseline vs Actual Duration Trend**
+```sql
+SELECT 
+  DATE_TRUNC('hour', ti.start_date) as time,
+  AVG(ti.duration) as "Actual Duration",
+  AVG(tb.p50_seconds) as "Baseline P50",
+  AVG(tb.p95_seconds) as "Baseline P95 (SLA)"
+FROM task_instance ti
+JOIN task_baseline tb 
+  ON ti.dag_id = tb.dag_id 
+  AND ti.task_id = tb.task_id
+  AND tb.baseline_key = 'default'
+WHERE ti.start_date BETWEEN $__timeFrom() AND $__timeTo()
+  AND ti.state = 'success'
+  AND ti.duration IS NOT NULL
+GROUP BY DATE_TRUNC('hour', ti.start_date)
+ORDER BY time;
+```
+
+**คำอธิบาย**:
+- **3 lines**: Actual duration, P50 baseline, P95 baseline (SLA threshold)
+- **Visual comparison**: เห็นว่า actual duration อยู่ระหว่าง P50-P95 หรือเกิน P95
+- **ความสำคัญ**: **Trend visualization** - เห็น performance trends เทียบกับ baseline
+
+**Business Value**:
+- Early warning: เห็น actual duration เริ่มเข้าใกล้ P95 = ต้องเตรียมแก้ไข
+- Validation: หลัง optimize เห็น actual duration ลดลงใกล้ P50
+
+---
+
+**11. SLA Violation Heatmap (by Hour of Day)**
+```sql
+SELECT 
+  EXTRACT(HOUR FROM ti.start_date) as "Hour",
+  COUNT(*) FILTER (WHERE ti.duration > tb.p95_seconds) as "Violations"
+FROM task_instance ti
+JOIN task_baseline tb 
+  ON ti.dag_id = tb.dag_id 
+  AND ti.task_id = tb.task_id
+  AND tb.baseline_key = 'default'
+WHERE ti.start_date BETWEEN $__timeFrom() AND $__timeTo()
+  AND ti.state = 'success'
+  AND ti.duration IS NOT NULL
+GROUP BY EXTRACT(HOUR FROM ti.start_date)
+ORDER BY "Hour";
+```
+
+**คำอธิบาย**:
+- **`EXTRACT(HOUR FROM ti.start_date)`**: แยกชั่วโมงจาก timestamp (0-23)
+- **`COUNT(*) FILTER (WHERE ...)`**: นับ violations ในแต่ละชั่วโมง
+- **ความสำคัญ**: **Pattern analysis** - เห็น peak hours ที่มี violations สูง
+
+**Business Value**:
+- Capacity planning: เพิ่ม resources ใน peak hours
+- Scheduling optimization: Reschedule heavy tasks ออกจาก peak hours
+
+---
+
+#### 🎯 Baseline Computation DAG
+
+**DAG**: `baseline_compute_daily`
+**Schedule**: ทุก 5 นาที (POC mode) - Production ควรเป็น daily
+**Configuration**:
+```python
+WINDOW_DAYS = 14      # Look back 14 days
+MIN_SAMPLES = 2       # Minimum 2 successful runs (POC) - Production ควรเป็น 20
+BASELINE_KEY = "default"
+BUFFER_PERCENT = 0.15  # Recommended SLA = P95 * 1.15
+```
+
+**Tasks**:
+1. **extract**: Query task_instance history (14 days, success only)
+2. **compute**: Calculate percentiles (P50, P90, P95, P99) per task
+3. **upsert**: Store/update baselines in task_baseline table
+4. **report**: Print summary
+
+**Baseline Table Schema**:
+```sql
+CREATE TABLE task_baseline (
+  dag_id VARCHAR,
+  task_id VARCHAR,
+  baseline_key VARCHAR,
+  window_days INTEGER,
+  as_of_date DATE,
+  samples INTEGER,
+  avg_seconds FLOAT,
+  p50_seconds FLOAT,
+  p90_seconds FLOAT,
+  p95_seconds FLOAT,
+  p99_seconds FLOAT,
+  stddev_seconds FLOAT,
+  recommended_sla_seconds FLOAT,
+  updated_at TIMESTAMP,
+  PRIMARY KEY (dag_id, task_id, baseline_key, window_days, as_of_date)
+);
+```
+
+---
+
+#### 📈 Best Practices
+
+**Monitoring**:
+- ตั้ง alert สำหรับ SLA Compliance < 90%
+- ตั้ง alert สำหรับ SLA Violations > 10% of total tasks
+- Monitor "At Risk Tasks" เพื่อ proactive intervention
+- Review "Top 10 Slowest Tasks" weekly เพื่อ prioritize optimization
+
+**Baseline Management**:
+- Review baseline statistics monthly
+- Adjust MIN_SAMPLES based on task frequency (high frequency = higher MIN_SAMPLES)
+- Use multiple baseline_keys สำหรับ different contexts (peak/off-peak, weekday/weekend)
+- Archive old baselines เพื่อ historical analysis
+
+**Performance Optimization**:
+- Focus on tasks with high "Slowdown Factor" และ high "Occurrences"
+- Use "Violation %" เพื่อ quantify severity
+- Validate optimization ด้วย "Baseline vs Actual Duration Trend"
+- Document optimization efforts และ track impact
+
+**Capacity Planning**:
+- Use "SLA Violation Heatmap" เพื่อ identify peak hours
+- Monitor trends เพื่อ predict future capacity needs
+- Plan resource scaling based on violation patterns
+
+---
+
+#### 🔄 Integration with Other Dashboards
+
+| Dashboard | Integration Point | Use Case |
+|-----------|------------------|----------|
+| **Task Performance** | Duration analysis | Deep dive into slow tasks |
+| **Resource & Pool** | Resource correlation | Link performance to resource constraints |
+| **Error & Debugging** | Failure correlation | Check if violations lead to failures |
+| **Job Flow Visualization** | Dependency impact | Assess downstream impact of violations |
+
+---
+
+#### 🎓 Key Concepts
+
+**P50 (Median)**:
+- 50% ของ tasks รันเสร็จภายในเวลานี้
+- ใช้เป็น "typical" performance
+
+**P95 (95th Percentile)**:
+- 95% ของ tasks รันเสร็จภายในเวลานี้
+- ใช้เป็น SLA threshold (ยอมรับได้ว่า 5% อาจเกิน)
+
+**P99 (99th Percentile)**:
+- 99% ของ tasks รันเสร็จภายในเวลานี้
+- ใช้เป็น "worst case" planning
+
+**Recommended SLA**:
+- P95 * 1.15 (เพิ่ม 15% buffer)
+- ให้ margin สำหรับ variability
+
+---
+
 ### 🔑 สรุปความแตกต่าง Airflow 3.x Schema
 
 การเปลี่ยนแปลงสำคัญที่ต้องระวังเมื่อเขียน SQL queries:
@@ -2274,7 +2754,7 @@ WHERE start_date >= $__timeFrom()
 
 ## 🎯 Summary
 
-เอกสารนี้ครอบคลุม **9 Grafana Dashboards** สำหรับ monitoring Apache Airflow 3.x โดยละเอียด:
+เอกสารนี้ครอบคลุม **10 Grafana Dashboards** สำหรับ monitoring Apache Airflow 3.x โดยละเอียด:
 
 1. **Airflow Metrics** - Real-time monitoring จาก Prometheus
 2. **Airflow DAGs** - ภาพรวมสถานะ DAGs และ Tasks
@@ -2285,6 +2765,7 @@ WHERE start_date >= $__timeFrom()
 7. **Airflow DAG Dependencies & Lineage** - ติดตาม dependencies และ data lineage
 8. **Airflow DAG Tasks Explorer** - Interactive drill-down สำหรับ explore tasks ใน DAG ที่เลือก
 9. **Airflow Job Flow Visualization** - Control-M style monitoring พร้อม performance anomaly detection และ critical path analysis
+10. **Airflow SLA & Baseline Monitoring** - SLA compliance tracking และ performance baseline comparison
 
 แต่ละ dashboard มีคำอธิบายละเอียดเกี่ยวกับ:
 - **วัตถุประสงค์**: ใช้ดูอะไร
@@ -2292,4 +2773,10 @@ WHERE start_date >= $__timeFrom()
 - **Column explanations**: ทำไมถึงเลือกใช้ column นั้น
 - **Business value**: ประโยชน์ทางธุรกิจ
 - **Best practices**: แนวทางปฏิบัติที่ดี
+
+**🆕 New in this version**:
+- เพิ่ม **SLA & Baseline Monitoring Dashboard** สำหรับ data-driven SLA tracking
+- ใช้ Grafana Time Range Variables (`$__timeFrom()`, `$__timeTo()`) ในทุก dashboards
+- รองรับ Airflow 3.x schema changes
+- Foreign Data Wrapper (FDW) สำหรับ cross-database queries
 
